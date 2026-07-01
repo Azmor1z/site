@@ -51,15 +51,19 @@ Emplacements des placeholders images :
 - `o-autoru.html` : portrait de l'auteur
 
 ### 3. Contenu réel (croate)
-Cherche/remplace ces valeurs provisoires :
-- **Titre** : `Pjesme mora i kamena`
-- **Auteur** : `Ivan Marić`
-- **Prix** : `27,90 €` (et l'ancien prix `34,90 €`)
-- **Chansons** : la liste dans la section `#sadrzaj` de `index.html`
-- **Avis clients** : section `#recenzije`
-- **Biographie** : `o-autoru.html`
+Données déjà intégrées : titre **Pjesme za srce i dušu**, auteur **Mijo Dujić**,
+176 pages, format 15×21 cm, ISBN 978-953-46578-2-9, vrais titres de chansons
+(extraits du sommaire) dans la section `#sadrzaj`.
+
+Reste à confirmer / fournir :
+- **Prix** : actuellement `19,90 €` — **placeholder à confirmer** (chercher
+  `19,90` dans `index.html`, `o-autoru.html` et les 4 pages légales).
+- **Avis clients** (`#recenzije` de `index.html`) : textes **provisoires**, à
+  remplacer par de vrais avis ou à supprimer avant mise en ligne.
+- **Biographie de l'auteur** (`o-autoru.html`) : en attente ; le texte actuel
+  décrit honnêtement les thèmes du livre, sans inventer de faits biographiques.
 - **Textes légaux** : les champs entre crochets `[…]` (raison sociale, OIB,
-  adresse, e-mail, ISBN…) dans les 4 pages légales.
+  adresse, e-mail…) dans les 4 pages légales.
 
 ## Prévisualisation locale
 
