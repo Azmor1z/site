@@ -3,7 +3,7 @@
 Déposez ici les images produit (couverture, livre ouvert, portrait de l'auteur…).
 
 Suggestions de noms utilisés dans le README principal :
-- `naslovnica.jpg` — couverture du livre
+- `naslovnica.png` — couverture du livre
 - `knjiga-otvorena.jpg` — livre ouvert (pages intérieures)
 - `autor.jpg` — portrait de l'auteur
 
