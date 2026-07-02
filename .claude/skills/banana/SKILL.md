@@ -307,6 +307,7 @@ Default: `gemini-3.1-flash-image-preview`. Switch with `set_model` when routing 
 | `PROHIBITED_CONTENT` | Topic is blocked (violence, NSFW, real public figures). Non-retryable -- explain why and suggest alternative concepts. |
 | Safety filter false positive | Filters are overly cautious. Rephrase using abstraction, artistic framing, or metaphor. Common: "dog" blocked → try "a friendly golden retriever in a sunny park". See `references/prompt-engineering.md` Safety Rephrase Strategies. |
 | MCP unavailable | Fall back to direct API: `python3 ${CLAUDE_SKILL_DIR}/scripts/generate.py --prompt "..." --aspect-ratio "16:9"` or `python3 ${CLAUDE_SKILL_DIR}/scripts/edit.py --image PATH --prompt "..."`. These call the Gemini REST API directly with no MCP dependency. |
+| No billing / free tier quota is 0 (429 with `limit: 0`) | Use the free provider fallback (no API key, no billing): `python3 ${CLAUDE_SKILL_DIR}/scripts/free_generate.py --prompt "..." --aspect-ratio "16:9"`. Powered by Pollinations.ai (FLUX). Generation only -- no editing or multi-turn chat. Requires network access to `image.pollinations.ai`. |
 | Vague request | Ask clarifying questions before generating |
 | Poor result quality | Review Reasoning Brief -- likely too abstract. Load `references/prompt-engineering.md` Proven Templates and rebuild with specifics. |
 
