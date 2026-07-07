@@ -18,6 +18,7 @@ export interface PositionView {
   dayChange: number;
   weightPct: number; // % de la valeur totale du portefeuille
   targetGapPct: number; // weight - target
+  spark?: number[]; // ~30 dernières clôtures (mini-courbe)
   signals: Signal[];
 }
 

@@ -3,7 +3,7 @@ import { getDb } from "./db";
 // Support des proxys d'entreprise : Node fetch (undici) n'honore pas
 // HTTPS_PROXY par défaut. Sans proxy configuré, ne change rien.
 let proxyReady: Promise<void> | null = null;
-function ensureProxy(): Promise<void> {
+export function ensureProxy(): Promise<void> {
   if (!proxyReady) {
     proxyReady = (async () => {
       if (process.env.HTTPS_PROXY || process.env.https_proxy) {
@@ -108,4 +108,76 @@ export function getHistory(ticker: string, days?: number): { date: string; close
     .prepare("SELECT date, close FROM history WHERE ticker = ? ORDER BY date ASC")
     .all(ticker) as { date: string; close: number }[];
   return days ? rows.slice(-days) : rows;
+}
+
+/** Rafraîchissement léger : cotations seules, en un appel groupé (pour l'auto-refresh). */
+export async function refreshQuotes(): Promise<RefreshResult[]> {
+  const db = getDb();
+  const tickers = (db.prepare("SELECT ticker FROM assets WHERE active = 1").all() as { ticker: string }[])
+    .map((r) => r.ticker);
+  if (tickers.length === 0) return [];
+  const y = await yf();
+  try {
+    const quotes = await y.quote(tickers);
+    const update = db.prepare(`
+      UPDATE quotes SET price = ?, prev_close = ?, change_pct = ?, day_low = ?, day_high = ?,
+        week52_low = ?, week52_high = ?, market_state = ?, updated_at = ?
+      WHERE ticker = ?
+    `);
+    const insert = db.prepare(`
+      INSERT OR IGNORE INTO quotes (ticker, price, prev_close, change_pct, day_low, day_high,
+        week52_low, week52_high, market_state, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const now = new Date().toISOString();
+    const seen = new Set<string>();
+    for (const q of Array.isArray(quotes) ? quotes : [quotes]) {
+      if (!q?.symbol) continue;
+      seen.add(q.symbol);
+      const args = [
+        q.regularMarketPrice ?? null,
+        q.regularMarketPreviousClose ?? null,
+        q.regularMarketChangePercent ?? null,
+        q.regularMarketDayLow ?? null,
+        q.regularMarketDayHigh ?? null,
+        q.fiftyTwoWeekLow ?? null,
+        q.fiftyTwoWeekHigh ?? null,
+        q.marketState ?? null,
+        now,
+      ];
+      const res = update.run(...args, q.symbol);
+      if (res.changes === 0) {
+        insert.run(q.symbol, ...args);
+      }
+    }
+    return tickers.map((t) => ({ ticker: t, ok: seen.has(t) }));
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return tickers.map((t) => ({ ticker: t, ok: false, error: msg }));
+  }
+}
+
+export interface SearchHit {
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+}
+
+/** Recherche de titres (actions/ETF) via Yahoo Finance. */
+export async function searchTickers(q: string): Promise<SearchHit[]> {
+  const y = await yf();
+  const res = await y.search(q, { quotesCount: 8, newsCount: 0 });
+  return (res.quotes ?? [])
+    .filter((r): r is typeof r & { symbol: string } => "symbol" in r && !!r.symbol)
+    .filter((r) => ["EQUITY", "ETF"].includes((r as { quoteType?: string }).quoteType ?? ""))
+    .map((r) => {
+      const rec = r as { symbol: string; shortname?: string; longname?: string; exchDisp?: string; quoteType?: string };
+      return {
+        symbol: rec.symbol,
+        name: rec.shortname ?? rec.longname ?? rec.symbol,
+        exchange: rec.exchDisp ?? "",
+        type: rec.quoteType === "ETF" ? "ETF" : "Action",
+      };
+    });
 }

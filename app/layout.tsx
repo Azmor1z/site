@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import "@fontsource-variable/inter";
 import "./globals.css";
 import { NavLinks } from "@/components/nav";
 
@@ -28,7 +29,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </Link>
             <NavLinks />
-            <div className="mt-auto px-2 text-[10px] leading-snug text-ink-3">
+            <a
+              href="/api/export"
+              className="mb-3 mt-auto rounded-xl px-3 py-2 text-[12px] text-ink-3 transition-colors hover:bg-white/5 hover:text-ink-2"
+              download
+            >
+              ⬇ Sauvegarder mes données
+            </a>
+            <div className="px-2 text-[10px] leading-snug text-ink-3">
               Analyse d&apos;information et de méthode — pas un conseil en investissement.
               Cours à revérifier avant toute exécution.
             </div>

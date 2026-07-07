@@ -42,8 +42,15 @@ export function getPortfolio(): PortfolioSummary {
   );
   const mature = targetUsd <= 0 || totalValue >= 0.5 * targetUsd;
 
+  const sparkStmt = db.prepare(
+    "SELECT close FROM history WHERE ticker = ? ORDER BY date DESC LIMIT 30"
+  );
+
   const positions: PositionView[] = prelim.map((p) => {
     const weightPct = totalValue > 0 ? (p.marketValue / totalValue) * 100 : 0;
+    const spark = (sparkStmt.all(p.asset.ticker) as { close: number }[])
+      .map((r) => r.close)
+      .reverse();
     const base = {
       asset: p.asset,
       quote: p.quote,
@@ -58,7 +65,7 @@ export function getPortfolio(): PortfolioSummary {
       weightPct,
       targetGapPct: weightPct - p.asset.target_pct,
     };
-    return { ...base, signals: buildSignals(base, mature) };
+    return { ...base, spark, signals: buildSignals(base, mature) };
   });
 
   const aiValue = positions

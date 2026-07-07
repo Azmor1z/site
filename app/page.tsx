@@ -11,9 +11,11 @@ import {
   DeltaChip,
   Button,
   Spinner,
+  Sparkline,
   BLOCK_COLORS,
   blockLabel,
 } from "@/components/ui";
+import { AddAssetButton } from "@/components/add-asset";
 import { PortfolioChart } from "@/components/charts";
 import { fmtUsd, fmtPct, fmtNum, fmtDateTime, pnlClass } from "@/lib/format";
 import { BLOCK_ORDER, RULES } from "@/lib/memo-data";
@@ -27,6 +29,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRules, setShowRules] = useState(false);
+  const [live, setLive] = useState(true);
 
   const load = useCallback(async () => {
     const [p, h] = await Promise.all([
@@ -40,6 +43,22 @@ export default function Dashboard() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Actualisation automatique : cotations groupées toutes les 60 s (onglet visible)
+  useEffect(() => {
+    if (!live) return;
+    const tick = async () => {
+      if (document.hidden) return;
+      try {
+        await fetch("/api/refresh?mode=quotes", { method: "POST" });
+        await load();
+      } catch {
+        // silencieux : nouvel essai à la prochaine minute
+      }
+    };
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, [live, load]);
 
   const refresh = async () => {
     setRefreshing(true);
@@ -81,9 +100,25 @@ export default function Dashboard() {
               <span className="ml-2 opacity-70">· cours du {fmtDateTime(data.lastQuoteUpdate)}</span>
             )}
           </span>
-          <Button onClick={refresh} disabled={refreshing} variant="ghost">
-            {refreshing ? <>Actualisation… <Spinner /></> : "⟳ Actualiser"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setLive(!live)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                live ? "bg-good/10 text-pos" : "bg-white/6 text-ink-3"
+              }`}
+              title={live ? "Actualisation automatique chaque minute — cliquer pour mettre en pause" : "Actualisation en pause — cliquer pour reprendre"}
+            >
+              <span
+                className={`inline-block h-1.5 w-1.5 rounded-full ${live ? "live-dot" : ""}`}
+                style={{ background: live ? "var(--pos)" : "var(--ink-3)" }}
+              />
+              {live ? "En direct" : "En pause"}
+            </button>
+            <Button onClick={refresh} disabled={refreshing} variant="ghost">
+              {refreshing ? <>Actualisation… <Spinner /></> : "⟳ Tout recharger"}
+            </Button>
+            <AddAssetButton onAdded={load} />
+          </div>
         </div>
         <div className="mt-1 text-[40px] font-semibold leading-tight tabular">
           {fmtUsd(data.totalValue)}
@@ -360,6 +395,11 @@ function HoldingRow({ p }: { p: PositionView }) {
           )}
         </div>
       </div>
+      {p.spark && p.spark.length > 1 && (
+        <div className="hidden md:block">
+          <Sparkline data={p.spark} />
+        </div>
+      )}
       <div className="text-right">
         {held ? (
           <>

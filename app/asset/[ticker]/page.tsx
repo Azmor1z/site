@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Card,
@@ -130,6 +130,9 @@ export default function AssetPage() {
         onChange={load}
       />
 
+      {/* ——— Dimensionnement ——— */}
+      <SizingCard asset={asset} price={price} />
+
       {/* ——— Niveaux ——— */}
       <LevelsSection asset={asset} price={price} onSaved={load} />
 
@@ -137,7 +140,7 @@ export default function AssetPage() {
       <MonteCarloCard ticker={asset.ticker} />
 
       {/* ——— Contexte mémo ——— */}
-      <Card title="Contexte du mémo">
+      <Card title="Contexte du mémo" action={<RemoveAssetButton asset={asset} />}>
         <dl className="space-y-2 text-xs leading-relaxed">
           <div>
             <dt className="text-ink-3">Thèse</dt>
@@ -624,5 +627,120 @@ function MonteCarloCard({ ticker }: { ticker: string }) {
         </>
       )}
     </Card>
+  );
+}
+
+/* ——— Dimensionner un achat (taille de position, risque au stop, R:R) ——— */
+function SizingCard({ asset, price }: { asset: AssetRow; price: number | null }) {
+  const [budget, setBudget] = useState("500");
+  const [totalValue, setTotalValue] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/portfolio")
+      .then((r) => r.json())
+      .then((p) => setTotalValue(p.totalValue ?? null))
+      .catch(() => {});
+  }, []);
+
+  if (price === null || price <= 0) return null;
+  const b = Number(budget) || 0;
+  const qty = b > 0 ? b / price : 0;
+  const stop = asset.stop_price;
+  const tp1 = asset.tp1_low;
+  const riskUsd = stop !== null && stop < price ? qty * (price - stop) : null;
+  const riskPct = stop !== null && stop < price ? ((price - stop) / price) * 100 : null;
+  const rr =
+    stop !== null && tp1 !== null && price > stop && tp1 > price
+      ? (tp1 - price) / (price - stop)
+      : null;
+  const weightAdded =
+    totalValue !== null && totalValue + b > 0 ? (b / (totalValue + b)) * 100 : null;
+  const inBuyZone =
+    asset.buy_low !== null && asset.buy_high !== null
+      ? price >= asset.buy_low && price <= asset.buy_high
+      : null;
+
+  return (
+    <Card title="Dimensionner un achat">
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="text-[11px] text-ink-3">
+          Montant à investir $
+          <input
+            type="number"
+            min="0"
+            step="any"
+            className="mt-0.5 block w-28"
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+          />
+        </label>
+        <div className="grid grow grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4">
+          <div>
+            <div className="text-ink-3">Quantité au cours actuel</div>
+            <div className="mt-0.5 font-semibold tabular">{qty > 0 ? fmtNum(qty, 4) : "—"}</div>
+          </div>
+          <div>
+            <div className="text-ink-3">Poids ajouté au portefeuille</div>
+            <div className="mt-0.5 font-semibold tabular">
+              {weightAdded !== null && b > 0 ? fmtPct(weightAdded, 1) : "—"}
+              {asset.target_pct > 0 && <span className="ml-1 text-[10px] text-ink-3">cible {asset.target_pct} %</span>}
+            </div>
+          </div>
+          <div>
+            <div className="text-ink-3">Perte si stop touché</div>
+            <div className="mt-0.5 font-semibold tabular text-neg">
+              {riskUsd !== null && b > 0 ? (
+                <>
+                  {fmtUsd(-riskUsd, 0)}
+                  <span className="ml-1 text-[10px]">({fmtPct(-(riskPct ?? 0), 1)})</span>
+                </>
+              ) : (
+                "—"
+              )}
+            </div>
+          </div>
+          <div>
+            <div className="text-ink-3">R:R vers TP1</div>
+            <div className={`mt-0.5 font-semibold tabular ${rr !== null && rr >= 1.5 ? "text-pos" : ""}`}>
+              {rr !== null ? `${fmtNum(rr, 1)} : 1` : "—"}
+            </div>
+          </div>
+        </div>
+      </div>
+      <p className="mt-3 text-[10px] leading-relaxed text-ink-3">
+        {inBuyZone === true && "Le cours est dans la zone d'achat du mémo. "}
+        {inBuyZone === false && "⚠ Le cours est HORS de la zone d'achat du mémo — vérifier la thèse avant d'exécuter. "}
+        Risque calculé au stop prix ({stop ?? "aucun"}) ; un stop « événement » prime toujours.
+        R:R mesuré du cours actuel vers le bas de la zone TP1.
+      </p>
+    </Card>
+  );
+}
+
+/* ——— Retirer la ligne (désactivation douce, transactions conservées) ——— */
+function RemoveAssetButton({ asset }: { asset: AssetRow }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const remove = async () => {
+    await fetch(`/api/assets/${asset.ticker}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: 0 }),
+    });
+    router.push("/");
+  };
+  if (!confirming) {
+    return (
+      <button onClick={() => setConfirming(true)} className="text-xs text-ink-3 hover:text-critical">
+        Retirer du portefeuille
+      </button>
+    );
+  }
+  return (
+    <span className="flex items-center gap-2 text-xs">
+      <span className="text-ink-3">Sûr ? (swap, pas ajout)</span>
+      <button onClick={remove} className="font-semibold text-critical">Oui, retirer</button>
+      <button onClick={() => setConfirming(false)} className="text-ink-3">Annuler</button>
+    </span>
   );
 }

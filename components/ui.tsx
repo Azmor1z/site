@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { BLOCK_LABELS, Block } from "@/lib/memo-data";
 import type { Signal } from "@/lib/positions";
 
@@ -61,7 +61,7 @@ export function Stat({
   );
 }
 
-/** Pastille ronde façon logo (initiales du ticker, teintée par bloc). */
+/** Logo de l'entreprise (servi et mis en cache par /api/logo), repli : initiales teintées par bloc. */
 export function TickerAvatar({
   ticker,
   block,
@@ -71,7 +71,27 @@ export function TickerAvatar({
   block: string;
   size?: number;
 }) {
+  const [failed, setFailed] = useState(false);
   const color = BLOCK_COLORS[block] ?? "var(--ink-3)";
+  if (!failed) {
+    return (
+      <span
+        className="flex shrink-0 items-center justify-center overflow-hidden rounded-full"
+        style={{ width: size, height: size, background: "#fff" }}
+        aria-hidden
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/api/logo/${ticker}`}
+          alt=""
+          width={size}
+          height={size}
+          className="h-[72%] w-[72%] object-contain"
+          onError={() => setFailed(true)}
+        />
+      </span>
+    );
+  }
   return (
     <span
       className="flex shrink-0 items-center justify-center rounded-full font-bold"
@@ -86,6 +106,33 @@ export function TickerAvatar({
     >
       {ticker.slice(0, 2)}
     </span>
+  );
+}
+
+/** Mini-courbe 30 jours (liste de clôtures), teintée par le sens de la période. */
+export function Sparkline({
+  data,
+  width = 88,
+  height = 28,
+}: {
+  data: number[];
+  width?: number;
+  height?: number;
+}) {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const span = max - min || 1;
+  const step = width / (data.length - 1);
+  const pts = data
+    .map((v, i) => `${(i * step).toFixed(1)},${(height - 2 - ((v - min) / span) * (height - 4)).toFixed(1)}`)
+    .join(" ");
+  const up = data[data.length - 1] >= data[0];
+  const color = up ? "var(--pos)" : "var(--neg)";
+  return (
+    <svg width={width} height={height} className="shrink-0" aria-hidden>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
   );
 }
 

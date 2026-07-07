@@ -65,7 +65,8 @@ html {
 body {
   background: var(--page);
   color: var(--ink);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "cv11";
   font-size: 14px;
 }
 
@@ -106,4 +107,12 @@ textarea:focus {
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.live-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
 }
