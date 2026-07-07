@@ -7,7 +7,7 @@ export async function GET() {
   const db = getDb();
   const rows = db
     .prepare(
-      `SELECT t.*, a.ticker, a.name FROM transactions t
+      `SELECT t.*, a.ticker, a.name, a.block FROM transactions t
        JOIN assets a ON a.id = t.asset_id
        ORDER BY t.date DESC, t.id DESC`
     )

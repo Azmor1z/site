@@ -3,10 +3,10 @@
 /* ——— Thème sombre unique (type Finary) ——— */
 :root {
   /* surfaces */
-  --page: #0b0d12;
+  --page: #0c0d11;
   --surface: #12141a;
-  --card: #171a21;
-  --card-hover: #1d212a;
+  --card: #14161c;
+  --card-hover: #1b1e26;
   --border: rgba(255, 255, 255, 0.08);
   --grid: #262a33;
 
@@ -71,8 +71,8 @@ body {
 
 .card {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
 }
 
 .tabular {
@@ -84,8 +84,8 @@ select,
 textarea {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 10px;
+  border-radius: 10px;
+  padding: 7px 11px;
   color: var(--ink);
   font-size: 13px;
   outline: none;

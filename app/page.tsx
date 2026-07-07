@@ -3,20 +3,38 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { Card, Stat, BlockChip, SignalBadge, Button, Spinner, BLOCK_COLORS, blockLabel } from "@/components/ui";
+import {
+  Card,
+  TickerAvatar,
+  SignalBadge,
+  SignalDot,
+  DeltaChip,
+  Button,
+  Spinner,
+  BLOCK_COLORS,
+  blockLabel,
+} from "@/components/ui";
+import { PortfolioChart } from "@/components/charts";
 import { fmtUsd, fmtPct, fmtNum, fmtDateTime, pnlClass } from "@/lib/format";
 import { BLOCK_ORDER, RULES } from "@/lib/memo-data";
 import type { PortfolioSummary, PositionView } from "@/lib/positions";
 
+type PfHistory = { date: string; value: number; invested: number }[];
+
 export default function Dashboard() {
   const [data, setData] = useState<PortfolioSummary | null>(null);
+  const [history, setHistory] = useState<PfHistory>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRules, setShowRules] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/portfolio");
-    setData(await res.json());
+    const [p, h] = await Promise.all([
+      fetch("/api/portfolio").then((r) => r.json()),
+      fetch("/api/portfolio/history").then((r) => r.json()),
+    ]);
+    setData(p);
+    setHistory(h);
   }, []);
 
   useEffect(() => {
@@ -45,109 +63,147 @@ export default function Dashboard() {
   }
 
   const hasQuotes = data.positions.some((p) => p.quote?.price != null);
+  const invested = data.totalValue > 0;
   const alerts = data.positions.flatMap((p) =>
     p.signals
       .filter((s) => s.level !== "info")
-      .map((s) => ({ ticker: p.asset.ticker, signal: s }))
+      .map((s) => ({ ticker: p.asset.ticker, block: p.asset.block, signal: s }))
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold">Tableau de bord</h1>
-          <p className="text-xs text-ink-3">
-            Dernière mise à jour des cours : {fmtDateTime(data.lastQuoteUpdate)}
-          </p>
+    <div className="mx-auto max-w-4xl space-y-6">
+      {/* ——— Héro ——— */}
+      <div>
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] text-ink-3">
+            Portefeuille
+            {data.lastQuoteUpdate && (
+              <span className="ml-2 opacity-70">· cours du {fmtDateTime(data.lastQuoteUpdate)}</span>
+            )}
+          </span>
+          <Button onClick={refresh} disabled={refreshing} variant="ghost">
+            {refreshing ? <>Actualisation… <Spinner /></> : "⟳ Actualiser"}
+          </Button>
         </div>
-        <Button onClick={refresh} disabled={refreshing}>
-          {refreshing ? <>Rafraîchissement… <Spinner /></> : "⟳ Rafraîchir les cours"}
-        </Button>
+        <div className="mt-1 text-[40px] font-semibold leading-tight tabular">
+          {fmtUsd(data.totalValue)}
+        </div>
+        {invested && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <DeltaChip
+              amount={fmtUsd(data.dayChange, 0)}
+              pct={fmtPct(data.dayChangePct, 2, true)}
+              label="aujourd'hui"
+            />
+            <DeltaChip
+              amount={fmtUsd(data.totalUnrealized, 0)}
+              pct={
+                data.totalInvested > 0
+                  ? fmtPct((data.totalUnrealized / data.totalInvested) * 100, 1, true)
+                  : undefined
+              }
+              label="latent"
+            />
+          </div>
+        )}
       </div>
 
-      {error && (
-        <div className="card border-critical/40 p-3 text-xs text-serious">{error}</div>
-      )}
+      {error && <div className="card p-3 text-xs text-serious">{error}</div>}
+
       {!hasQuotes && (
-        <div className="card p-4 text-sm text-ink-2">
-          Bienvenue. Le portefeuille cible du mémo (16 lignes, zones d&apos;achat, stops, TP)
-          est pré-chargé. Commencez par <strong>« Rafraîchir les cours »</strong> pour récupérer
-          prix et historiques, puis saisissez vos exécutions réelles dans{" "}
-          <Link href="/transactions" className="text-accent underline">Transactions</Link>.
+        <Card>
+          <p className="text-sm leading-relaxed text-ink-2">
+            Bienvenue. Le portefeuille cible du mémo (16 lignes, zones d&apos;achat, stops, TP)
+            est pré-chargé. Commencez par <strong>« Actualiser »</strong> pour récupérer les cours,
+            puis saisissez vos achats dans{" "}
+            <Link href="/transactions" className="text-accent underline">Transactions</Link>.
+          </p>
+        </Card>
+      )}
+
+      {/* ——— Courbe de valeur ——— */}
+      {history.length >= 2 && <PortfolioChart data={history} />}
+
+      {invested && (
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-3">
+          <span>Investi <strong className="tabular text-ink-2">{fmtUsd(data.totalInvested, 0)}</strong></span>
+          <span>
+            P&L réalisé{" "}
+            <strong className={`tabular ${pnlClass(data.totalRealized)}`}>{fmtUsd(data.totalRealized, 0)}</strong>
+          </span>
+          <span>Facteur IA <strong className="tabular text-ink-2">{fmtPct(data.aiFactorPct, 1)}</strong></span>
+          <span>Ballast <strong className="tabular text-ink-2">{fmtPct(data.ballastPct, 1)}</strong></span>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Stat label="Valeur du portefeuille" value={fmtUsd(data.totalValue)} sub={`investi : ${fmtUsd(data.totalInvested)}`} />
-        <Stat
-          label="P&L latent"
-          value={<span className={pnlClass(data.totalUnrealized)}>{fmtUsd(data.totalUnrealized)}</span>}
-          sub={data.totalInvested > 0 ? fmtPct((data.totalUnrealized / data.totalInvested) * 100, 1, true) : "—"}
-          subClass={pnlClass(data.totalUnrealized)}
-        />
-        <Stat
-          label="Variation du jour"
-          value={<span className={pnlClass(data.dayChange)}>{fmtUsd(data.dayChange)}</span>}
-          sub={fmtPct(data.dayChangePct, 2, true)}
-          subClass={pnlClass(data.dayChange)}
-        />
-        <Stat
-          label="P&L réalisé"
-          value={<span className={pnlClass(data.totalRealized)}>{fmtUsd(data.totalRealized)}</span>}
-          sub="ventes cumulées"
-        />
-        <Stat
-          label="Exposition facteur IA"
-          value={fmtPct(data.aiFactorPct, 1)}
-          sub={`ballast : ${fmtPct(data.ballastPct, 1)} · trigger macro → 40 %`}
-        />
-      </div>
+      {/* ——— Signaux ——— */}
+      {alerts.length > 0 && <AlertsCard alerts={alerts} />}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <AllocationCard positions={data.positions} totalValue={data.totalValue} />
-        <Card title={`Alertes & signaux (${alerts.length})`} className="lg:col-span-2">
-          {alerts.length === 0 ? (
-            <p className="text-xs text-ink-3">
-              Aucun signal actif. Les signaux apparaissent dès que les cours sont chargés :
-              zone d&apos;achat, stop, TP1, écrêtage, règles spéculatives…
-            </p>
-          ) : (
-            <ul className="space-y-1.5">
-              {alerts.map((a, i) => (
-                <li key={i} className="flex items-center gap-2 text-xs">
-                  <Link href={`/asset/${a.ticker}`} className="w-14 shrink-0 font-semibold text-accent hover:underline">
-                    {a.ticker}
-                  </Link>
-                  <SignalBadge signal={a.signal} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
+      {/* ——— Allocation ——— */}
+      <AllocationCard positions={data.positions} totalValue={data.totalValue} />
 
-      <HoldingsTable positions={data.positions} />
+      {/* ——— Lignes ——— */}
+      <HoldingsList positions={data.positions} />
 
       <Card
-        title="Règles de sortie / rééquilibrage (mémo)"
+        title="Règles du mémo"
         action={
           <button onClick={() => setShowRules(!showRules)} className="text-xs text-accent">
             {showRules ? "Masquer" : "Afficher"}
           </button>
         }
       >
-        {showRules && (
-          <ul className="list-disc space-y-1 pl-5 text-xs text-ink-2">
+        {showRules ? (
+          <ul className="list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-ink-2">
             {RULES.map((r, i) => (
               <li key={i}>{r}</li>
             ))}
           </ul>
+        ) : (
+          <p className="text-xs text-ink-3">
+            Écrêtage 1,5× · règle de cycle MU · spéculatif -35 % · TP +100 % · trigger macro · revue trimestrielle…
+          </p>
         )}
       </Card>
     </div>
   );
 }
 
+/* ——— Signaux ——— */
+function AlertsCard({
+  alerts,
+}: {
+  alerts: { ticker: string; block: string; signal: PositionView["signals"][number] }[];
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const shown = showAll ? alerts : alerts.slice(0, 5);
+  return (
+    <Card
+      title={`Signaux (${alerts.length})`}
+      action={
+        alerts.length > 5 && (
+          <button onClick={() => setShowAll(!showAll)} className="text-xs text-accent">
+            {showAll ? "Réduire" : "Tout voir"}
+          </button>
+        )
+      }
+    >
+      <ul className="space-y-2">
+        {shown.map((a, i) => (
+          <li key={i} className="flex items-center gap-2.5 text-xs">
+            <TickerAvatar ticker={a.ticker} block={a.block} size={24} />
+            <Link href={`/asset/${a.ticker}`} className="w-12 shrink-0 font-semibold hover:text-accent">
+              {a.ticker}
+            </Link>
+            <SignalBadge signal={a.signal} />
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+/* ——— Allocation ——— */
 function AllocationCard({
   positions,
   totalValue,
@@ -170,18 +226,18 @@ function AllocationCard({
   const invested = totalValue > 0;
 
   return (
-    <Card title="Allocation par bloc">
-      {invested ? (
-        <>
-          <div className="relative">
-            <ResponsiveContainer width="100%" height={170}>
+    <Card title="Allocation">
+      <div className="flex flex-col items-center gap-5 sm:flex-row">
+        {invested && (
+          <div className="relative h-40 w-40 shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={byBlock.filter((b) => b.value > 0)}
                   dataKey="value"
                   nameKey="name"
-                  innerRadius={52}
-                  outerRadius={80}
+                  innerRadius={54}
+                  outerRadius={76}
                   paddingAngle={2}
                   stroke="var(--card)"
                   strokeWidth={2}
@@ -195,9 +251,9 @@ function AllocationCard({
                 <Tooltip
                   formatter={(v) => fmtUsd(v as number)}
                   contentStyle={{
-                    background: "#1d212a",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 8,
+                    background: "#1b1e26",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: 12,
                     fontSize: 12,
                   }}
                 />
@@ -208,121 +264,119 @@ function AllocationCard({
               <span className="text-sm font-bold tabular">{fmtUsd(totalValue, 0)}</span>
             </div>
           </div>
-        </>
-      ) : (
-        <p className="mb-2 text-xs text-ink-3">
-          Aucune position saisie — répartition cible du mémo ci-dessous.
-        </p>
-      )}
-      <ul className="mt-2 space-y-1">
-        {byBlock.map((b) => {
-          const actualPct = totalValue > 0 ? (b.value / totalValue) * 100 : null;
-          return (
-            <li key={b.block} className="flex items-center gap-2 text-xs">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: BLOCK_COLORS[b.block] }} />
-              <span className="text-ink-2">{b.name}</span>
-              <span className="ml-auto tabular text-ink">
-                {actualPct !== null ? fmtPct(actualPct, 1) : "—"}
-              </span>
-              <span className="w-16 whitespace-nowrap text-right tabular text-ink-3">
-                cible {b.target} %
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </Card>
-  );
-}
-
-function HoldingsTable({ positions }: { positions: PositionView[] }) {
-  return (
-    <Card title="Lignes du portefeuille" className="overflow-hidden">
-      <div className="-mx-4 overflow-x-auto px-4">
-        <table className="w-full min-w-[900px] text-xs">
-          <thead>
-            <tr className="border-b border-white/8 text-left text-[11px] text-ink-3">
-              <th className="py-2 pr-2 font-medium">Ligne</th>
-              <th className="px-2 py-2 text-right font-medium">Cours</th>
-              <th className="px-2 py-2 text-right font-medium">Jour</th>
-              <th className="px-2 py-2 text-right font-medium">Qté</th>
-              <th className="px-2 py-2 text-right font-medium">PRU</th>
-              <th className="px-2 py-2 text-right font-medium">Valeur</th>
-              <th className="px-2 py-2 text-right font-medium">P&L</th>
-              <th className="px-2 py-2 text-right font-medium">Poids / cible</th>
-              <th className="px-2 py-2 font-medium">Signaux</th>
-            </tr>
-          </thead>
-          <tbody>
-            {positions.map((p) => {
-              const q = p.quote;
-              return (
-                <tr key={p.asset.ticker} className="border-b border-white/5 hover:bg-card-hover">
-                  <td className="py-2 pr-2">
-                    <Link href={`/asset/${p.asset.ticker}`} className="group flex items-center gap-2">
-                      <div>
-                        <span className="font-semibold text-ink group-hover:text-accent">
-                          {p.asset.ticker}
-                        </span>
-                        <span className="ml-1.5 hidden text-ink-3 xl:inline">{p.asset.name}</span>
-                      </div>
-                      <BlockChip block={p.asset.block} />
-                    </Link>
-                  </td>
-                  <td className="px-2 py-2 text-right tabular">{fmtNum(q?.price)}</td>
-                  <td className={`px-2 py-2 text-right tabular ${pnlClass(q?.change_pct)}`}>
-                    {fmtPct(q?.change_pct, 2, true)}
-                  </td>
-                  <td className="px-2 py-2 text-right tabular">{p.qty > 0 ? fmtNum(p.qty, 4) : "—"}</td>
-                  <td className="px-2 py-2 text-right tabular">{fmtNum(p.avgCost)}</td>
-                  <td className="px-2 py-2 text-right tabular">{p.qty > 0 ? fmtUsd(p.marketValue, 0) : "—"}</td>
-                  <td className={`px-2 py-2 text-right tabular ${pnlClass(p.unrealizedPnl)}`}>
-                    {p.qty > 0 ? (
-                      <>
-                        {fmtUsd(p.unrealizedPnl, 0)}
-                        <span className="ml-1 text-[10px]">({fmtPct(p.unrealizedPnlPct, 1, true)})</span>
-                      </>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="px-2 py-2 text-right">
-                    <WeightBar weight={p.weightPct} target={p.asset.target_pct} />
-                  </td>
-                  <td className="px-2 py-2">
-                    <div className="flex max-w-72 flex-wrap gap-1">
-                      {p.signals.slice(0, 2).map((s, i) => (
-                        <SignalBadge key={i} signal={s} />
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        )}
+        <ul className="w-full space-y-2.5">
+          {byBlock.map((b) => {
+            const actualPct = totalValue > 0 ? (b.value / totalValue) * 100 : 0;
+            const max = Math.max(actualPct, b.target, 1) * 1.2;
+            return (
+              <li key={b.block} className="text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: BLOCK_COLORS[b.block] }} />
+                  <span className="text-ink-2">{b.name}</span>
+                  <span className="ml-auto tabular font-semibold">
+                    {invested ? fmtPct(actualPct, 1) : "—"}
+                  </span>
+                  <span className="w-14 whitespace-nowrap text-right tabular text-ink-3">
+                    / {b.target} %
+                  </span>
+                </div>
+                <div className="relative mt-1 h-1 overflow-hidden rounded-full bg-white/6">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full"
+                    style={{
+                      width: `${Math.min((actualPct / max) * 100, 100)}%`,
+                      background: BLOCK_COLORS[b.block],
+                      opacity: 0.85,
+                    }}
+                  />
+                  <div
+                    className="absolute inset-y-0 w-px bg-white/50"
+                    style={{ left: `${Math.min((b.target / max) * 100, 100)}%` }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </Card>
   );
 }
 
-function WeightBar({ weight, target }: { weight: number; target: number }) {
-  const max = Math.max(weight, target, 0.01) * 1.3;
+/* ——— Liste des lignes ——— */
+function HoldingsList({ positions }: { positions: PositionView[] }) {
   return (
-    <div className="flex items-center justify-end gap-2">
-      <span className="tabular text-ink">{weight > 0 ? fmtPct(weight, 1) : "—"}</span>
-      <div className="relative h-1.5 w-16 overflow-hidden rounded-full bg-white/8">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-accent/80"
-          style={{ width: `${Math.min((weight / max) * 100, 100)}%` }}
-        />
-        <div
-          className="absolute inset-y-0 w-0.5 bg-ink-2"
-          style={{ left: `${Math.min((target / max) * 100, 100)}%` }}
-          title={`Cible ${target} %`}
-        />
+    <Card title="Lignes" className="!p-3">
+      {BLOCK_ORDER.map((block) => {
+        const rows = positions.filter((p) => p.asset.block === block);
+        if (rows.length === 0) return null;
+        const target = rows.reduce((a, p) => a + p.asset.target_pct, 0);
+        return (
+          <div key={block} className="mb-1">
+            <div className="flex items-center gap-2 px-2 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-ink-3">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: BLOCK_COLORS[block] }} />
+              {blockLabel(block)}
+              <span className="opacity-70">· cible {target} %</span>
+            </div>
+            {rows.map((p) => (
+              <HoldingRow key={p.asset.ticker} p={p} />
+            ))}
+          </div>
+        );
+      })}
+    </Card>
+  );
+}
+
+function HoldingRow({ p }: { p: PositionView }) {
+  const q = p.quote;
+  const held = p.qty > 0;
+  const firstSignal = p.signals.find((s) => s.level !== "info");
+  return (
+    <Link
+      href={`/asset/${p.asset.ticker}`}
+      className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-card-hover"
+    >
+      <TickerAvatar ticker={p.asset.ticker} block={p.asset.block} size={38} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="font-semibold">{p.asset.ticker}</span>
+          <span className="truncate text-xs text-ink-3">{p.asset.name}</span>
+        </div>
+        <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-ink-3">
+          {held ? (
+            <span className="tabular">
+              {fmtNum(p.qty, 4)} × PRU {fmtNum(p.avgCost)} · {p.weightPct.toFixed(1)} % / {p.asset.target_pct} %
+            </span>
+          ) : (
+            <span className="tabular">cible {p.asset.target_pct} %</span>
+          )}
+          {firstSignal && (
+            <>
+              <SignalDot level={firstSignal.level} />
+              <span className="truncate" style={{ maxWidth: 220 }}>{firstSignal.label}</span>
+            </>
+          )}
+        </div>
       </div>
-      <span className="w-8 text-right tabular text-[10px] text-ink-3">{target} %</span>
-    </div>
+      <div className="text-right">
+        {held ? (
+          <>
+            <div className="font-semibold tabular">{fmtUsd(p.marketValue, 0)}</div>
+            <div className={`text-xs tabular ${pnlClass(p.unrealizedPnl)}`}>
+              {fmtPct(p.unrealizedPnlPct, 1, true)}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="font-semibold tabular">{q?.price != null ? `${fmtNum(q.price)} $` : "—"}</div>
+            <div className={`text-xs tabular ${pnlClass(q?.change_pct)}`}>
+              {fmtPct(q?.change_pct, 2, true)}
+            </div>
+          </>
+        )}
+      </div>
+    </Link>
   );
 }
