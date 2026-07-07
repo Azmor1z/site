@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/* ——— Thème sombre unique (type Finary) ——— */
+:root {
+  /* surfaces */
+  --page: #0b0d12;
+  --surface: #12141a;
+  --card: #171a21;
+  --card-hover: #1d212a;
+  --border: rgba(255, 255, 255, 0.08);
+  --grid: #262a33;
+
+  /* encre */
+  --ink: #f5f6f8;
+  --ink-2: #b6bac4;
+  --ink-3: #8a8f9b;
+
+  /* catégoriel (blocs) — validé CVD sur --surface */
+  --c-coeur: #3987e5;
+  --c-satellite: #199e70;
+  --c-speculatif: #c98500;
+  --c-crypto: #008300;
+  --c-hedge: #9085e9;
+  --c-cash: #d55181;
+
+  /* séquentiel bleu (cône Monte Carlo) */
+  --seq-300: #6da7ec;
+  --seq-450: #2a78d6;
+  --seq-600: #184f95;
+
+  /* statut (jamais réutilisé comme série) */
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+
+  /* deltas */
+  --pos: #22b022;
+  --neg: #e66767;
+
+  --accent: #3987e5;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-pos: var(--pos);
+  --color-neg: var(--neg);
+  --color-good: var(--good);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
+  --color-accent: var(--accent);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+input,
+select,
+textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--ink);
+  font-size: 13px;
+  outline: none;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c3038;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
