@@ -7,7 +7,20 @@ cible (16 lignes, zones d'achat, stops, TP1, objectifs, poids) est pré-chargé.
 > Analyse d'information et de méthode — pas un conseil en investissement.
 > Cours à revérifier avant toute exécution.
 
-## Démarrage
+## Démarrage rapide (Windows, sans terminal)
+
+1. Installer [Node.js](https://nodejs.org/fr) (version LTS) — une seule fois.
+2. Télécharger ce dépôt en ZIP et l'extraire où vous voulez (ex. `Bureau\outils`).
+3. Double-cliquer **« Installer raccourci bureau.bat »** — crée l'icône
+   *Cockpit US* sur le Bureau.
+4. Double-cliquer l'icône **Cockpit US** : la première fois, tout s'installe
+   automatiquement (2-4 min), puis l'app s'ouvre dans sa propre fenêtre.
+   Les fois suivantes : quelques secondes.
+
+`Arreter Cockpit US.bat` coupe le serveur (les données sont conservées).
+Sur macOS : double-cliquer `lancer-cockpit-us.command`.
+
+## Démarrage (terminal)
 
 ```bash
 npm install
