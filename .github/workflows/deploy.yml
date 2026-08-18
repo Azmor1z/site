@@ -1,0 +1,55 @@
+name: Déployer sur GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permissions minimales nécessaires au déploiement Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois ; les pushes suivants remplacent celui en attente.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier l'intégrité des données pédagogiques
+        run: node tests/integrity.js
+
+      - name: Assembler le dossier publié
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp -r assets _site/
+          # Variante mono-fichier, utile pour un usage hors ligne.
+          node build.js _site/secplus-lab-hors-ligne.html
+          # Empêche Jekyll d'ignorer les dossiers commençant par un underscore.
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+        with:
+          # Active GitHub Pages sur le dépôt s'il ne l'est pas déjà.
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
