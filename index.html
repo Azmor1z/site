@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SecPlus Lab — Révision CompTIA Security+ SY0-701</title>
+<meta name="description" content="Plateforme d'entraînement interactive pour la certification CompTIA Security+ SY0-701, alignée sur le cours de Jason Dion.">
+<meta name="theme-color" content="#080b14">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+
+<!-- ================= Écran de chargement ================= -->
+<div id="boot" class="boot">
+  <div class="boot__shield">🛡️</div>
+  <div class="boot__title">SecPlus Lab</div>
+  <div class="boot__bar"><i></i></div>
+</div>
+
+<!-- ================= Barre supérieure ================= -->
+<header class="topbar" id="topbar" hidden>
+  <button class="topbar__burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="topbar__brand" href="#/">
+    <span class="topbar__logo">🛡️</span>
+    <span class="topbar__name">SecPlus<em>Lab</em></span>
+  </a>
+  <div class="topbar__spacer"></div>
+  <button class="btn btn--ghost btn--icon" id="searchBtn" title="Recherche (touche /)" aria-label="Recherche">🔎</button>
+  <button class="btn btn--ghost btn--icon" id="themeBtn" title="Changer de thème" aria-label="Changer de thème">🌙</button>
+  <a class="topbar__streak" href="#/stats" title="Jours consécutifs d'étude">
+    <span class="topbar__streakIcon">🔥</span><span id="streakVal">0</span>
+  </a>
+</header>
+
+<!-- ================= Navigation latérale ================= -->
+<nav class="sidebar" id="sidebar" hidden aria-label="Navigation principale">
+  <div class="sidebar__scroll">
+
+    <div class="sidebar__group">
+      <div class="sidebar__label">Pilotage</div>
+      <a class="navlink" href="#/" data-route="/"><span class="navlink__i">📊</span>Tableau de bord</a>
+      <a class="navlink" href="#/parcours" data-route="/parcours"><span class="navlink__i">🗺️</span>Parcours 28 sections</a>
+      <a class="navlink" href="#/revision" data-route="/revision"><span class="navlink__i">🔁</span>Révision du jour<span class="navlink__badge" id="dueBadge" hidden>0</span></a>
+      <a class="navlink" href="#/stats" data-route="/stats"><span class="navlink__i">📈</span>Statistiques</a>
+    </div>
+
+    <div class="sidebar__group">
+      <div class="sidebar__label">Entraînement</div>
+      <a class="navlink" href="#/quiz/all" data-route="/quiz"><span class="navlink__i">✅</span>Quiz libre</a>
+      <a class="navlink" href="#/flash/all" data-route="/flash"><span class="navlink__i">🃏</span>Flashcards</a>
+      <a class="navlink" href="#/drills/all" data-route="/drills"><span class="navlink__i">🧩</span>Exercices</a>
+      <a class="navlink" href="#/labs" data-route="/labs"><span class="navlink__i">🖥️</span>Labs PBQ</a>
+      <a class="navlink" href="#/exam" data-route="/exam"><span class="navlink__i">🎯</span>Examen blanc</a>
+    </div>
+
+    <div class="sidebar__group">
+      <div class="sidebar__label">Références</div>
+      <a class="navlink" href="#/acronymes" data-route="/acronymes"><span class="navlink__i">🔤</span>Acronymes</a>
+      <a class="navlink" href="#/ports" data-route="/ports"><span class="navlink__i">🔌</span>Ports &amp; protocoles</a>
+      <a class="navlink" href="#/formules" data-route="/formules"><span class="navlink__i">🧮</span>Formules de risque</a>
+      <a class="navlink" href="#/objectifs" data-route="/objectifs"><span class="navlink__i">📋</span>Objectifs CompTIA</a>
+    </div>
+
+    <div class="sidebar__group">
+      <div class="sidebar__label">Sections du cours</div>
+      <div id="sectionNav"></div>
+    </div>
+
+  </div>
+</nav>
+<div class="scrim" id="scrim" hidden></div>
+
+<!-- ================= Contenu ================= -->
+<main class="main" id="main" hidden>
+  <div id="view" class="view"></div>
+</main>
+
+<!-- ================= Recherche globale ================= -->
+<div class="modal" id="searchModal" hidden>
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__panel modal__panel--search" role="dialog" aria-modal="true" aria-label="Recherche">
+    <input type="search" id="searchInput" class="searchInput" placeholder="Rechercher un terme, une notion, une section…" autocomplete="off" spellcheck="false">
+    <div class="searchResults" id="searchResults"></div>
+  </div>
+</div>
+
+<!-- ================= Notifications ================= -->
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<!-- ================= Scripts ================= -->
+<script src="assets/js/data/curriculum.js"></script>
+<script src="assets/js/data/acronyms.js"></script>
+<script src="assets/js/data/ports.js"></script>
+<script src="assets/js/data/flashcards.js"></script>
+<script src="assets/js/data/questions.js"></script>
+<script src="assets/js/data/drills.js"></script>
+<script src="assets/js/data/labs.js"></script>
+<script src="assets/js/core/util.js"></script>
+<script src="assets/js/core/store.js"></script>
+<script src="assets/js/core/srs.js"></script>
+<script src="assets/js/core/ui.js"></script>
+<script src="assets/js/views/dashboard.js"></script>
+<script src="assets/js/views/roadmap.js"></script>
+<script src="assets/js/views/section.js"></script>
+<script src="assets/js/views/flashcards.js"></script>
+<script src="assets/js/views/quiz.js"></script>
+<script src="assets/js/views/drills.js"></script>
+<script src="assets/js/views/exam.js"></script>
+<script src="assets/js/views/labs.js"></script>
+<script src="assets/js/views/reference.js"></script>
+<script src="assets/js/views/stats.js"></script>
+<script src="assets/js/app.js"></script>
+
+</body>
+</html>
