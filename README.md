@@ -58,6 +58,20 @@ La progression est enregistrée dans le `localStorage` du navigateur — aucune 
 n'est transmise à un serveur. Elle est exportable et réimportable en JSON depuis la
 page Statistiques.
 
+## Mise en ligne
+
+Le site est déployé par GitHub Pages à l'adresse **https://azmor1z.github.io/site/**.
+
+L'activation de Pages ne peut pas être faite par l'API et doit être choisie une
+seule fois dans les réglages du dépôt — *Settings → Pages → Build and deployment* :
+
+- **Source « GitHub Actions »** (recommandé) : le workflow `.github/workflows/deploy.yml`
+  vérifie l'intégrité des données, assemble le dossier publié et déploie à chaque
+  push sur `main`.
+- **Source « Deploy from a branch » → `main` → `/ (root)`** : fonctionne aussi
+  directement, le site étant un statique à la racine. Le fichier `.nojekyll`
+  garantit que les ressources sont servies telles quelles.
+
 ## Utilisation
 
 Ouvrir `index.html` dans un navigateur, ou servir le dossier :
