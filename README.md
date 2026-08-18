@@ -86,6 +86,29 @@ python3 -m http.server 8000
 5. Une fois les 28 sections couvertes, passer des **examens blancs** et retravailler
    les domaines faibles signalés dans la correction.
 
+## Tests
+
+Deux suites couvrent le projet, sans dépendance autre que Playwright pour la seconde.
+
+```bash
+node tests/integrity.js   # cohérence des données pédagogiques
+node tests/e2e.js         # 55 tests navigateur de bout en bout
+```
+
+`tests/integrity.js` vérifie notamment que les 28 sections existent et sont
+mappées à des objectifs valides, que chaque question a exactement quatre options
+distinctes et une explication, qu'aucun exercice n'est ambigu (définition
+dupliquée, étiquette dans deux catégories, leurre identique à une réponse), que
+les formules de risque restent mathématiquement cohérentes sur 300 tirages, et
+que l'algorithme de répétition espacée borne correctement ses intervalles.
+
+`tests/e2e.js` pilote un vrai navigateur : rendu des 28 sections et de toutes les
+routes, retournement et notation des flashcards, correction des quiz, les quatre
+types d'exercices, déroulé complet d'un lab et d'un examen blanc chronométré,
+recherche, bascule de thème, persistance après rechargement, résistance à un
+`localStorage` corrompu, affichage mobile et absence d'injection HTML.
+Définissez `CHROMIUM_PATH` si Chromium n'est pas à l'emplacement par défaut.
+
 ## Sources
 
 Contenu construit à partir des objectifs officiels *CompTIA Security+ SY0-701
