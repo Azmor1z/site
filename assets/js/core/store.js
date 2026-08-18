@@ -39,7 +39,8 @@
     return {
       version: 1,
       created: Date.now(),
-      theme: 'dark',
+      // null = aucun choix explicite : on suivra la préférence du système.
+      theme: null,
       // SRS : { cardId: {ease, interval, due (dayKey), reps, lapses, last} }
       srs: {},
       // Quiz : { questionId: {seen, ok, ko, lastOk} }
@@ -62,8 +63,10 @@
     var d = defaults();
     if (!data || typeof data !== 'object') return d;
     for (var k in d) {
+      if (k === 'theme') continue; // null est une valeur valide : « suivre le système »
       if (!(k in data) || data[k] === null || data[k] === undefined) data[k] = d[k];
     }
+    if (data.theme !== 'light' && data.theme !== 'dark') data.theme = null;
     if (typeof data.srs !== 'object') data.srs = {};
     if (typeof data.quiz !== 'object') data.quiz = {};
     if (typeof data.sections !== 'object') data.sections = {};
@@ -89,7 +92,14 @@
   };
 
   /* ---------------------- Thème ---------------------- */
-  S.getTheme = function () { return state.theme === 'light' ? 'light' : 'dark'; };
+  /** Tant que l'utilisateur n'a rien choisi, on respecte la préférence du système. */
+  S.getTheme = function () {
+    if (state.theme === 'light' || state.theme === 'dark') return state.theme;
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) return 'light';
+    } catch (e) { /* matchMedia indisponible : on retombe sur le thème sombre */ }
+    return 'dark';
+  };
   S.setTheme = function (t) {
     state.theme = (t === 'light') ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', state.theme);
