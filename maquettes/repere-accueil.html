@@ -7,399 +7,419 @@
 
 <style>
 /* ==========================================================================
-   REPÈRE — maquette de la page d'accueil
-   Tokens conformes à docs/brief-studio.md §7. Couleurs en OKLCH uniquement.
-   Rayon 0 · aucune ombre portée · hiérarchie par le trait, le fond, l'espace.
+   REPÈRE — page d'accueil, direction 3D
+   Scène raymarchée en WebGL écrite à la main (aucune bibliothèque tierce :
+   la CSP des artefacts interdit tout CDN, et three.js pèserait 700 ko).
+   Grille de filets retirée sur demande.
    ========================================================================== */
 
-/* --- 1. Tokens : jeu clair complet ------------------------------------- */
+/* --- 1. Tokens ---------------------------------------------------------- */
 :root{
   --papier:       oklch(97.5% 0.008  85);
-  --papier-2:     oklch(94.5% 0.010  85);
-  --papier-3:     oklch(91.0% 0.012  85);
+  --papier-2:     oklch(94.8% 0.010  85);
+  --papier-3:     oklch(91.5% 0.012  85);
   --encre:        oklch(21%   0.020 250);
   --encre-2:      oklch(43%   0.015 250);
-  --encre-3:      oklch(62%   0.012 250);
   --trait:        oklch(88%   0.008  85);
   --trait-fort:   oklch(76%   0.012  85);
   --signal:       oklch(58%   0.185  38);
   --signal-fonce: oklch(48%   0.175  38);
-  --signal-doux:  oklch(94%   0.035  38);
   --signal-survol:oklch(41%   0.165  36);
+  --signal-doux:  oklch(94%   0.035  38);
   --sur-signal:   oklch(98%   0.006  85);
   --ok:           oklch(48%   0.120 150);
   --alerte:       oklch(52%   0.130  75);
   --erreur:       oklch(50%   0.180  25);
 
-  --police-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
-  --police-texte:   "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --police-mono:    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* La scène est un décor : elle reste sombre dans les deux thèmes. */
+  --scene:        oklch(15%   0.014 258);
+  --scene-2:      oklch(20%   0.016 258);
+  --scene-trait:  oklch(32%   0.018 258);
+  --scene-encre:  oklch(95%   0.008  85);
+  --scene-encre-2:oklch(74%   0.012 250);
+  --scene-signal: oklch(72%   0.165  40);
 
-  --e1:4px;  --e2:8px;  --e3:12px; --e4:16px; --e5:24px;
-  --e6:32px; --e7:48px; --e8:64px; --e9:96px; --e10:160px;
+  --police-display:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  --police-texte:  "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --police-mono:   "Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 
-  --largeur: 1320px;
-  --marge: clamp(20px, 4.5vw, 56px);
-  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+  --e1:4px; --e2:8px; --e3:12px; --e4:16px; --e5:24px;
+  --e6:32px; --e7:48px; --e8:64px; --e9:96px; --e10:144px;
+
+  --largeur:1280px;
+  --marge:clamp(20px,5vw,64px);
+  --sortie:cubic-bezier(0.16,1,0.3,1);
 }
-
-/* --- 2. Tokens : jeu nuit (second thème, pas une inversion) ------------- */
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --papier:       oklch(19%   0.015 255);
-    --papier-2:     oklch(23%   0.016 255);
-    --papier-3:     oklch(26.5% 0.017 255);
-    --encre:        oklch(94%   0.008  85);
-    --encre-2:      oklch(78%   0.011 250);
-    --encre-3:      oklch(63%   0.013 250);
-    --trait:        oklch(33%   0.015 255);
-    --trait-fort:   oklch(44%   0.017 255);
-    --signal:       oklch(71%   0.160  40);
-    --signal-fonce: oklch(71%   0.160  40);
-    --signal-doux:  oklch(30%   0.055  38);
-    --signal-survol:oklch(81%   0.135  42);
-    --sur-signal:   oklch(17%   0.015 255);
-    --ok:           oklch(74%   0.135 150);
-    --alerte:       oklch(78%   0.135  75);
-    --erreur:       oklch(71%   0.165  25);
+    --papier:      oklch(19%   0.015 255);
+    --papier-2:    oklch(23%   0.016 255);
+    --papier-3:    oklch(27%   0.017 255);
+    --encre:       oklch(94%   0.008  85);
+    --encre-2:     oklch(78%   0.011 250);
+    --trait:       oklch(33%   0.015 255);
+    --trait-fort:  oklch(45%   0.017 255);
+    --signal:      oklch(72%   0.160  40);
+    --signal-fonce:oklch(72%   0.160  40);
+    --signal-survol:oklch(82%  0.135  42);
+    --signal-doux: oklch(30%   0.055  38);
+    --sur-signal:  oklch(16%   0.015 255);
+    --ok:          oklch(75%   0.135 150);
+    --alerte:      oklch(79%   0.135  75);
+    --erreur:      oklch(72%   0.165  25);
   }
 }
 :root[data-theme="dark"]{
-  --papier:       oklch(19%   0.015 255);
-  --papier-2:     oklch(23%   0.016 255);
-  --papier-3:     oklch(26.5% 0.017 255);
-  --encre:        oklch(94%   0.008  85);
-  --encre-2:      oklch(78%   0.011 250);
-  --encre-3:      oklch(63%   0.013 250);
-  --trait:        oklch(33%   0.015 255);
-  --trait-fort:   oklch(44%   0.017 255);
-  --signal:       oklch(71%   0.160  40);
-  --signal-fonce: oklch(71%   0.160  40);
-  --signal-doux:  oklch(30%   0.055  38);
-  --signal-survol:oklch(81%   0.135  42);
-  --sur-signal:   oklch(17%   0.015 255);
-  --ok:           oklch(74%   0.135 150);
-  --alerte:       oklch(78%   0.135  75);
-  --erreur:       oklch(71%   0.165  25);
+  --papier:      oklch(19%   0.015 255);
+  --papier-2:    oklch(23%   0.016 255);
+  --papier-3:    oklch(27%   0.017 255);
+  --encre:       oklch(94%   0.008  85);
+  --encre-2:     oklch(78%   0.011 250);
+  --trait:       oklch(33%   0.015 255);
+  --trait-fort:  oklch(45%   0.017 255);
+  --signal:      oklch(72%   0.160  40);
+  --signal-fonce:oklch(72%   0.160  40);
+  --signal-survol:oklch(82%  0.135  42);
+  --signal-doux: oklch(30%   0.055  38);
+  --sur-signal:  oklch(16%   0.015 255);
+  --ok:          oklch(75%   0.135 150);
+  --alerte:      oklch(79%   0.135  75);
+  --erreur:      oklch(72%   0.165  25);
 }
 
-/* --- 3. Base ------------------------------------------------------------ */
+/* --- 2. Base ------------------------------------------------------------ */
 *{box-sizing:border-box}
 body{
-  margin:0;
-  background:var(--papier);
-  color:var(--encre);
-  font-family:var(--police-texte);
-  font-size:17px;
-  line-height:1.6;
-  font-synthesis-weight:none;
-  -webkit-font-smoothing:antialiased;
+  margin:0;background:var(--papier);color:var(--encre);
+  font-family:var(--police-texte);font-size:17px;line-height:1.62;
+  font-synthesis-weight:none;-webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
-h1,h2,h3,h4{font-family:var(--police-display);font-weight:600;margin:0;text-wrap:balance;line-height:1.04}
-h1{font-size:clamp(2.5rem,7.4vw,5.25rem);letter-spacing:-0.035em}
-h2{font-size:clamp(1.75rem,3.6vw,2.75rem);letter-spacing:-0.035em}
-h3{font-size:1.125rem;letter-spacing:-0.01em;line-height:1.25}
+h1,h2,h3{font-family:var(--police-display);font-weight:600;margin:0;line-height:1.03;text-wrap:balance}
+h1{font-size:clamp(3rem,9.5vw,7rem);letter-spacing:-0.042em;font-weight:700}
+h2{font-size:clamp(2rem,5vw,3.5rem);letter-spacing:-0.038em}
+h3{font-size:1.25rem;letter-spacing:-0.018em;line-height:1.22}
 p{margin:0}
-a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
 ul,ol{margin:0;padding:0;list-style:none}
+a{color:inherit;text-underline-offset:3px}
 :focus-visible{outline:2px solid var(--signal-fonce);outline-offset:3px}
 ::selection{background:var(--signal-doux);color:var(--encre)}
 
-.mono{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
-.nb{font-family:var(--police-mono);font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
-.prose{max-width:65ch}
-
+.mono{font-family:var(--police-mono);font-variant-numeric:tabular-nums}
+.prose{max-width:62ch}
 .etiquette{
   font-family:var(--police-mono);font-size:.6875rem;font-weight:500;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--encre-2);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--encre-2);
 }
+.enveloppe{max-width:var(--largeur);margin-inline:auto;padding-inline:var(--marge);position:relative}
+.section{padding-block:clamp(72px,11vw,var(--e10))}
 
-/* --- 4. La grille : 13 filets fixés, alignés sur 12 colonnes ------------ */
-.filets{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  max-width:var(--largeur);margin-inline:auto;
-  padding-inline:var(--marge);
-  display:grid;grid-template-columns:repeat(12,1fr);
+/* --- 3. Apparitions ------------------------------------------------------
+   Pilotées par IntersectionObserver et non par une plage de défilement :
+   l'animation se termine dès que l'élément entre, au lieu de laisser le
+   contenu à demi transparent pendant tout le scroll.                       */
+/* Visible par défaut : l'état masqué n'existe que si le script tourne (.anim).
+   Le déclenchement se fait par un contrôle de position au défilement, pas par
+   un IntersectionObserver — sous la charge du rendu 3D, la livraison de
+   l'observateur prend du retard et un défilement rapide la dépasse.          */
+.mont{opacity:1;transform:none}
+.anim .mont{opacity:0;transform:translate3d(0,26px,0);transition:opacity .65s var(--sortie),transform .65s var(--sortie)}
+.anim .mont.vu{opacity:1;transform:none}
+.anim .mont[data-d="1"]{transition-delay:.07s} .anim .mont[data-d="2"]{transition-delay:.14s}
+.anim .mont[data-d="3"]{transition-delay:.21s} .anim .mont[data-d="4"]{transition-delay:.28s}
+.anim .mont[data-d="5"]{transition-delay:.35s}
+@media (prefers-reduced-motion: reduce){ .anim .mont{opacity:1;transform:none;transition:none} }
+
+/* --- 4. Boutons ---------------------------------------------------------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--e2);
+  min-height:52px;padding:0 var(--e6);border:1px solid var(--encre);border-radius:0;
+  background:none;color:var(--encre);font:inherit;font-size:1rem;font-weight:500;
+  text-decoration:none;cursor:pointer;position:relative;overflow:hidden;
+  transition:color .2s var(--sortie),border-color .2s var(--sortie);
 }
-.filets i{border-left:1px solid var(--trait);transform-origin:top center}
-.filets i:last-child{border-right:1px solid var(--trait)}
-@media (prefers-reduced-motion: no-preference){
-  .filets i{transform:scaleY(0);animation:trace .95s var(--sortie) forwards;animation-delay:calc(var(--i) * 45ms)}
+.btn::after{
+  content:"";position:absolute;inset:0;background:var(--encre);z-index:-1;
+  transform:scaleY(0);transform-origin:bottom;transition:transform .3s var(--sortie);
 }
-@keyframes trace{to{transform:scaleY(1)}}
+.btn:hover{color:var(--papier)}
+.btn:hover::after{transform:scaleY(1)}
+.btn-signal{background:var(--signal-fonce);border-color:var(--signal-fonce);color:var(--sur-signal)}
+.btn-signal::after{background:var(--signal-survol)}
+.btn-signal:hover{color:var(--sur-signal);border-color:var(--signal-survol)}
+.btn-clair{border-color:var(--scene-trait);color:var(--scene-encre)}
+.btn-clair::after{background:var(--scene-encre)}
+.btn-clair:hover{color:var(--scene);border-color:var(--scene-encre)}
+@media (prefers-reduced-motion: reduce){ .btn::after{transition:none} }
 
-.enveloppe{
-  position:relative;z-index:1;
-  max-width:var(--largeur);margin-inline:auto;
-  padding-inline:var(--marge);
-}
-
-/* --- 5. Rythme des sections -------------------------------------------- */
-.section{border-top:1px solid var(--trait);padding-block:clamp(56px,10vw,var(--e10))}
-.section:first-of-type{border-top:0}
-.tete-section{display:flex;flex-wrap:wrap;gap:var(--e4) var(--e6);align-items:baseline;justify-content:space-between;margin-bottom:var(--e7)}
-.tete-section p{max-width:52ch;color:var(--encre-2)}
-
-@supports (animation-timeline: view()){
-  @media (prefers-reduced-motion: no-preference){
-    .revele{animation:apparait linear both;animation-timeline:view();animation-range:entry 4% cover 20%}
-  }
-}
-@keyframes apparait{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-
-/* --- 6. Bandeau maquette ----------------------------------------------- */
+/* --- 5. Bandeau et en-tête ---------------------------------------------- */
 .bandeau{
-  position:relative;z-index:3;background:var(--signal-doux);
-  border-bottom:1px solid var(--trait);
-  font-family:var(--police-mono);font-size:.75rem;color:var(--encre);
+  background:var(--scene-2);color:var(--scene-encre-2);
+  font-family:var(--police-mono);font-size:.6875rem;letter-spacing:.04em;
+  border-bottom:1px solid var(--scene-trait);position:relative;z-index:6;
 }
 .bandeau .enveloppe{display:flex;gap:var(--e3);align-items:center;padding-block:var(--e2);flex-wrap:wrap}
-.bandeau b{color:var(--signal-fonce);font-weight:600}
+.bandeau b{color:var(--scene-signal);font-weight:600;letter-spacing:.1em;text-transform:uppercase}
 
-/* --- 7. En-tête --------------------------------------------------------- */
 .evitement{
-  position:absolute;left:var(--e4);top:var(--e2);z-index:9;
-  transform:translateY(-200%);background:var(--encre);color:var(--papier);
+  position:absolute;left:var(--e4);top:var(--e2);z-index:20;
+  transform:translateY(-250%);background:var(--scene-encre);color:var(--scene);
   padding:var(--e2) var(--e4);font-size:.875rem;text-decoration:none;
-  transition:transform .15s var(--sortie);
+  transition:transform .2s var(--sortie);
 }
 .evitement:focus{transform:translateY(0)}
 
-.entete{
-  position:sticky;top:0;z-index:5;
-  background:var(--papier);border-bottom:1px solid var(--trait);
-}
-.entete .enveloppe{display:flex;align-items:center;gap:var(--e5);min-height:68px}
+.entete{position:absolute;top:0;left:0;right:0;z-index:5}
+.entete .enveloppe{display:flex;align-items:center;gap:var(--e5);min-height:80px}
 .marque{
-  font-family:var(--police-display);font-weight:700;font-size:1.375rem;
-  letter-spacing:-0.03em;text-decoration:none;display:flex;align-items:center;gap:var(--e2);
+  font-family:var(--police-display);font-weight:700;font-size:1.5rem;letter-spacing:-0.035em;
+  text-decoration:none;display:inline-flex;align-items:center;gap:10px;color:var(--scene-encre);
 }
-.marque span{width:9px;height:9px;background:var(--signal);flex:none}
-.nav{display:flex;gap:var(--e5);margin-left:auto;font-size:.9375rem}
-.nav a{text-decoration:none;color:var(--encre-2);transition:color .15s var(--sortie)}
-.nav a:hover{color:var(--encre)}
-.outils{display:flex;align-items:center;gap:var(--e2);margin-left:var(--e5)}
-
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:var(--e2);
-  min-height:44px;padding:0 var(--e5);border:1px solid var(--encre);
-  background:none;color:var(--encre);font:inherit;font-size:.9375rem;font-weight:500;
-  border-radius:0;text-decoration:none;cursor:pointer;
-  transition:background .15s var(--sortie),color .15s var(--sortie),border-color .15s var(--sortie);
+.marque i{width:10px;height:10px;background:var(--scene-signal);display:block;flex:none}
+.nav{display:flex;gap:var(--e6);margin-left:auto;font-size:.9375rem}
+.nav a{text-decoration:none;color:var(--scene-encre-2);position:relative;padding-block:var(--e1);transition:color .2s var(--sortie)}
+.nav a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--scene-signal);transform:scaleX(0);transform-origin:left;transition:transform .25s var(--sortie)}
+.nav a:hover{color:var(--scene-encre)}
+.nav a:hover::after{transform:scaleX(1)}
+.outils{display:flex;align-items:center;gap:var(--e2);margin-left:var(--e6)}
+.icone{
+  width:44px;height:44px;border:1px solid var(--scene-trait);background:none;
+  color:var(--scene-encre-2);display:grid;place-items:center;cursor:pointer;
+  font-family:var(--police-mono);font-size:1.125rem;line-height:1;
+  transition:color .2s var(--sortie),border-color .2s var(--sortie);
 }
-.btn:hover{background:var(--encre);color:var(--papier)}
-.btn-signal{background:var(--signal-fonce);border-color:var(--signal-fonce);color:var(--sur-signal)}
-.btn-signal:hover{background:var(--signal-survol);border-color:var(--signal-survol);color:var(--sur-signal)}
-.btn-min{min-height:40px;padding:0 var(--e4);font-size:.875rem;border-color:var(--trait-fort)}
-
-.bascule{
-  width:44px;height:44px;border:1px solid var(--trait-fort);background:none;color:var(--encre-2);
-  display:grid;place-items:center;cursor:pointer;font-family:var(--police-mono);font-size:1rem;
-  transition:color .15s var(--sortie),border-color .15s var(--sortie);
-}
-.bascule:hover{color:var(--encre);border-color:var(--encre)}
-.bascule[data-carre]::before{
-  content:"";width:14px;height:14px;border:1px solid currentColor;
-  background:linear-gradient(90deg,currentColor 0 50%,transparent 50% 100%);
-}
+.icone:hover{color:var(--scene-encre);border-color:var(--scene-encre)}
+.icone[data-carre]::before{content:"";width:14px;height:14px;border:1px solid currentColor;background:linear-gradient(90deg,currentColor 0 50%,transparent 50%)}
 .burger{display:none}
 
-/* --- 8. Héros ----------------------------------------------------------- */
-.heros{padding-block:clamp(56px,9vw,120px) clamp(48px,7vw,104px)}
-.heros-grille{display:grid;grid-template-columns:1fr;gap:var(--e8)}
-@media (min-width:1040px){
-  .heros-grille{grid-template-columns:repeat(12,1fr);gap:0;align-items:start}
-  .heros-grille > :first-child{grid-column:1 / span 7;padding-right:var(--e7)}
-  .heros-grille > .cartouche{grid-column:9 / span 4}
+/* --- 6. La scène --------------------------------------------------------- */
+.scene{
+  position:relative;background:var(--scene);color:var(--scene-encre);
+  min-height:min(96svh,940px);display:flex;flex-direction:column;
+  isolation:isolate;overflow:hidden;
 }
-.heros h1{margin-bottom:var(--e5)}
-.heros h1 em{font-style:normal;color:var(--signal)}
-.chapo{font-size:clamp(1.0625rem,1.9vw,1.3125rem);color:var(--encre-2);max-width:44ch;line-height:1.5}
-.actions{display:flex;flex-wrap:wrap;gap:var(--e3);margin-top:var(--e7)}
-.actions .btn{min-height:52px;padding:0 var(--e6);font-size:1rem}
-.appui{margin-top:var(--e5);font-size:.875rem;color:var(--encre-2)}
+#toile{
+  position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;
+  opacity:0;transition:opacity 1.2s ease-out;
+}
+#toile.prete{opacity:1}
+/* Repli si WebGL est indisponible : un fond sobre, jamais un trou noir. */
+.scene::before{
+  content:"";position:absolute;inset:0;z-index:-1;background:var(--scene);
+}
+.scene-voile{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(to right, oklch(15% 0.014 258 / .93) 0%, oklch(15% 0.014 258 / .72) 34%, transparent 62%),
+    linear-gradient(to bottom, oklch(15% 0.014 258 / .88) 0%, transparent 22%, transparent 56%, oklch(15% 0.014 258 / .94) 100%);
+}
+.scene-corps{position:relative;z-index:2;margin-top:auto;padding-block:var(--e8) clamp(40px,7vw,var(--e9));width:100%}
+@media (max-width:999px){
+  /* La pièce ne doit jamais passer sous une ligne de texte. */
+  .scene-corps{
+    background:linear-gradient(to bottom, transparent 0%, oklch(15% 0.014 258 / .72) 7%, oklch(15% 0.014 258 / .94) 18%, var(--scene) 34%);
+    padding-top:var(--e9);
+  }
+}
+.scene-grille{display:grid;grid-template-columns:1fr;gap:var(--e7)}
+@media (min-width:1000px){
+  .scene-grille{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:var(--e9);align-items:end}
+}
 
-/* --- 9. Cartouche de mesures ------------------------------------------- */
-.cartouche{border:1px solid var(--trait-fort);background:var(--papier-2)}
-.cartouche-tete{
-  display:flex;justify-content:space-between;align-items:center;gap:var(--e3);
-  padding:var(--e3) var(--e4);border-bottom:1px solid var(--trait-fort);
-}
-.pastille{
-  font-family:var(--police-mono);font-size:.625rem;letter-spacing:.12em;text-transform:uppercase;
-  border:1px solid var(--signal-fonce);color:var(--signal-fonce);padding:2px var(--e2);
-}
-.mesures{display:grid;grid-template-columns:1fr 1fr}
-.mesure{padding:var(--e5) var(--e4);border-bottom:1px solid var(--trait);border-right:1px solid var(--trait)}
-.mesure:nth-child(2n){border-right:0}
-.mesure:nth-last-child(-n+2){border-bottom:0}
-.mesure dt{font-family:var(--police-mono);font-size:.6875rem;letter-spacing:.1em;text-transform:uppercase;color:var(--encre-2);margin-bottom:var(--e2)}
-.mesure dd{margin:0;font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:clamp(1.75rem,4.4vw,2.25rem);font-weight:500;letter-spacing:-0.03em;line-height:1}
-.mesure dd small{font-size:.9375rem;font-weight:400;color:var(--encre-2);letter-spacing:0}
-.cartouche-pied{padding:var(--e3) var(--e4);border-top:1px solid var(--trait-fort);font-family:var(--police-mono);font-size:.6875rem;color:var(--encre-2)}
+/* Titre révélé ligne par ligne, chaque ligne masquée par son conteneur */
+.ligne{display:block;overflow:hidden}
+.ligne > span{display:block}
+.anim .ligne > span{transform:translateY(105%);transition:transform 1s var(--sortie)}
+.scene.prete .ligne > span{transform:none}
+.scene.prete .ligne:nth-child(2) > span{transition-delay:.10s}
+.scene.prete .ligne:nth-child(3) > span{transition-delay:.20s}
+h1 em{font-style:normal;color:var(--scene-signal)}
+@media (prefers-reduced-motion: reduce){ .anim .ligne > span{transform:none;transition:none} }
 
-/* --- 10. Table des engagements ----------------------------------------- */
-.table-enveloppe{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:560px}
-caption{text-align:left;color:var(--encre-2);font-size:.9375rem;margin-bottom:var(--e4)}
-th,td{text-align:left;padding:var(--e4) var(--e4) var(--e4) 0;border-bottom:1px solid var(--trait);vertical-align:baseline}
-thead th{
-  font-family:var(--police-mono);font-size:.6875rem;font-weight:500;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--encre-2);padding-bottom:var(--e3);border-bottom-color:var(--trait-fort);
+.scene-chapo{
+  font-size:clamp(1.0625rem,1.7vw,1.25rem);color:var(--scene-encre-2);
+  max-width:46ch;margin-top:var(--e6);
 }
-tbody th{font-weight:500;font-size:1rem}
-td.seuil{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:1.0625rem;white-space:nowrap}
-td.methode{color:var(--encre-2);font-size:.9375rem}
+.scene-actions{display:flex;flex-wrap:wrap;gap:var(--e3);margin-top:var(--e7)}
+.anim .retard{opacity:0;transform:translateY(20px);transition:opacity .8s var(--sortie) .45s,transform .8s var(--sortie) .45s}
+.scene.prete .retard{opacity:1;transform:none}
+.retard-2{transition-delay:.58s}
+@media (prefers-reduced-motion: reduce){ .anim .retard{opacity:1;transform:none;transition:none} }
 
-/* --- 11. Audit ---------------------------------------------------------- */
-.audit{background:var(--papier-2);border-top:1px solid var(--trait-fort);border-bottom:1px solid var(--trait-fort)}
+/* Fiche de lecture de la scène, en bas à droite */
+.lecture{
+  border-top:1px solid var(--scene-trait);padding:var(--e5) var(--e5) var(--e5) 0;
+  background:linear-gradient(to right, oklch(15% 0.014 258 / .90) 0%, oklch(15% 0.014 258 / .74) 78%, transparent 100%);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+}
+@media (min-width:1000px){ .lecture{padding-left:var(--e5);margin-left:calc(var(--e5) * -1)} }
+.lecture-tete{display:flex;justify-content:space-between;align-items:center;gap:var(--e3);margin-bottom:var(--e4)}
+.lecture-tete span{font-family:var(--police-mono);font-size:.625rem;letter-spacing:.16em;text-transform:uppercase;color:var(--scene-encre-2)}
+.lecture-tete b{
+  font-family:var(--police-mono);font-size:.5625rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--scene-signal);border:1px solid var(--scene-signal);padding:3px var(--e2);font-weight:500;
+}
+.lecture p{font-size:.9375rem;color:var(--scene-encre-2);max-width:38ch}
+.lecture-val{
+  display:flex;align-items:baseline;gap:var(--e2);margin-top:var(--e4);
+  font-family:var(--police-mono);font-variant-numeric:tabular-nums;
+}
+.lecture-val strong{font-size:2rem;font-weight:500;letter-spacing:-0.03em;color:var(--scene-encre)}
+.lecture-val span{font-size:.75rem;color:var(--scene-encre-2)}
+
+/* --- 7. Bande des engagements chiffrés ----------------------------------- */
+.chiffres{background:var(--scene-2);color:var(--scene-encre);padding-block:var(--e9)}
+.chiffres-tete{margin-bottom:var(--e8);max-width:56ch}
+.chiffres-tete h2{color:var(--scene-encre)}
+.chiffres-tete p{color:var(--scene-encre-2);margin-top:var(--e4)}
+.quatre{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--scene-trait);border:1px solid var(--scene-trait)}
+@media (min-width:900px){.quatre{grid-template-columns:repeat(4,1fr)}}
+.q{background:var(--scene-2);padding:var(--e6) var(--e5) var(--e7);transition:background .3s var(--sortie)}
+.q:hover{background:var(--scene)}
+.q dt{font-family:var(--police-mono);font-size:.625rem;letter-spacing:.15em;text-transform:uppercase;color:var(--scene-encre-2);margin-bottom:var(--e5)}
+.q dd{margin:0;display:flex;flex-direction:column;gap:var(--e4)}
+.q dd b{
+  font-family:var(--police-mono);font-variant-numeric:tabular-nums;
+  font-size:clamp(2.75rem,6.5vw,4rem);font-weight:500;letter-spacing:-0.045em;line-height:.92;
+  color:var(--scene-encre);
+}
+.q dd u{text-decoration:none;font-size:.9375rem;color:var(--scene-signal);letter-spacing:0;margin-left:6px}
+.q dd small{font-size:.875rem;color:var(--scene-encre-2);line-height:1.55}
+
+/* --- 8. Sections claires -------------------------------------------------- */
+.tete{margin-bottom:var(--e8);max-width:60ch}
+.tete .etiquette{display:block;margin-bottom:var(--e4)}
+.tete p{color:var(--encre-2);margin-top:var(--e5);font-size:1.0625rem}
+
+/* --- 9. Audit ------------------------------------------------------------- */
+.audit{background:var(--papier-2);border-block:1px solid var(--trait)}
 .audit-grille{display:grid;grid-template-columns:1fr;gap:var(--e8)}
-@media (min-width:1040px){
-  .audit-grille{grid-template-columns:repeat(12,1fr);gap:0;align-items:start}
-  .audit-grille > :first-child{grid-column:1 / span 5;padding-right:var(--e7)}
-  .audit-grille > .resultats{grid-column:7 / span 6}
-}
-.formulaire{display:flex;flex-direction:column;gap:var(--e3);margin-top:var(--e6);max-width:34rem}
-.formulaire label{font-family:var(--police-mono);font-size:.6875rem;letter-spacing:.12em;text-transform:uppercase;color:var(--encre-2)}
+@media (min-width:1000px){.audit-grille{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:var(--e9);align-items:start}}
+.formulaire{display:flex;flex-direction:column;gap:var(--e3);margin-top:var(--e7);max-width:34rem}
+.formulaire label{font-family:var(--police-mono);font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;color:var(--encre-2)}
 .saisie{display:flex;flex-wrap:wrap;gap:var(--e2)}
 .formulaire input{
-  flex:1 1 15rem;min-height:52px;padding:0 var(--e4);
-  border:1px solid var(--trait-fort);border-radius:2px;
-  background:var(--papier);color:var(--encre);
-  font-family:var(--police-mono);font-size:1rem;
+  flex:1 1 15rem;min-height:56px;padding:0 var(--e4);border:1px solid var(--trait-fort);border-radius:2px;
+  background:var(--papier);color:var(--encre);font-family:var(--police-mono);font-size:1rem;
+  transition:border-color .2s var(--sortie);
 }
+.formulaire input:hover{border-color:var(--encre-2)}
 .formulaire input:focus-visible{border-color:var(--signal-fonce);outline-offset:1px}
-.formulaire .btn{min-height:52px;flex:0 0 auto}
-.aide{font-size:.8125rem;color:var(--encre-2);max-width:44ch}
+.formulaire .btn{min-height:56px;flex:0 0 auto}
+.aide{font-size:.8125rem;color:var(--encre-2);max-width:46ch}
+.limites{margin-top:var(--e6);padding-top:var(--e5);border-top:1px solid var(--trait);font-size:.8125rem;color:var(--encre-2)}
+.limites li{padding-left:var(--e5);position:relative;margin-bottom:var(--e3)}
+.limites li::before{content:"";position:absolute;left:0;top:.62em;width:12px;height:1px;background:var(--signal)}
 
-.resultats{border:1px solid var(--trait-fort);background:var(--papier);min-height:340px;display:flex;flex-direction:column}
-.resultats-tete{display:flex;justify-content:space-between;align-items:center;gap:var(--e3);flex-wrap:wrap;padding:var(--e3) var(--e4);border-bottom:1px solid var(--trait-fort)}
-.resultats-tete strong{font-family:var(--police-mono);font-size:.8125rem;font-weight:500;word-break:break-all}
-.vide{margin:auto;padding:var(--e7) var(--e5);text-align:center;color:var(--encre-2);font-size:.9375rem;max-width:34ch}
-.bloc{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--e4);padding:var(--e4);border-bottom:1px solid var(--trait)}
+.console{border:1px solid var(--trait-fort);background:var(--papier);display:flex;flex-direction:column}
+.console-tete{display:flex;justify-content:space-between;align-items:center;gap:var(--e3);flex-wrap:wrap;padding:var(--e4);border-bottom:1px solid var(--trait-fort)}
+.console-tete strong{font-family:var(--police-mono);font-size:.8125rem;font-weight:500;word-break:break-all}
+.jauge{height:2px;background:var(--trait);position:relative;overflow:hidden}
+.jauge i{position:absolute;inset:0;background:var(--signal);transform:scaleX(0);transform-origin:left;transition:transform .5s linear}
+.vide{margin:auto;padding:var(--e9) var(--e5);text-align:center;color:var(--encre-2);font-size:.9375rem;max-width:36ch}
+.bloc{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--e4);padding:var(--e5) var(--e4);border-bottom:1px solid var(--trait)}
 .bloc:last-child{border-bottom:0}
 .bloc-nom{font-size:.9375rem;font-weight:500}
-.bloc-detail{font-size:.8125rem;color:var(--encre-2);margin-top:2px;max-width:38ch}
-.note{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:1.5rem;font-weight:500;letter-spacing:-0.03em;white-space:nowrap;line-height:1.1}
+.bloc-detail{font-size:.8125rem;color:var(--encre-2);margin-top:3px;max-width:40ch}
+.note{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:1.625rem;font-weight:500;letter-spacing:-0.035em;line-height:1.05;white-space:nowrap}
 .note[data-etat="ok"]{color:var(--ok)}
 .note[data-etat="alerte"]{color:var(--alerte)}
 .note[data-etat="erreur"]{color:var(--erreur)}
-.note[data-etat="attente"]{color:var(--encre-2);font-size:.8125rem;letter-spacing:.08em;text-transform:uppercase}
-@media (prefers-reduced-motion: no-preference){
-  .bloc[data-neuf]{animation:arrive .5s var(--sortie) both}
+.note[data-etat="attente"]{color:var(--encre-2);font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase}
+.bloc.neuf{animation:pose .55s var(--sortie) both}
+@keyframes pose{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){ .bloc.neuf{animation:none} }
+
+/* --- 10. Méthode : piste horizontale ------------------------------------- */
+.piste{
+  display:grid;grid-auto-flow:column;grid-auto-columns:minmax(268px,300px);
+  gap:1px;background:var(--trait);border:1px solid var(--trait);
+  overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;
 }
-@keyframes arrive{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.limites{margin-top:var(--e5);padding-top:var(--e4);border-top:1px solid var(--trait);font-size:.8125rem;color:var(--encre-2)}
-.limites li{padding-left:var(--e4);position:relative;margin-bottom:var(--e2)}
-.limites li::before{content:"—";position:absolute;left:0;color:var(--signal)}
+.piste::-webkit-scrollbar{height:2px}
+.piste::-webkit-scrollbar-thumb{background:var(--trait-fort)}
+.etape{
+  background:var(--papier);padding:var(--e6) var(--e5) var(--e7);scroll-snap-align:start;
+  display:flex;flex-direction:column;gap:var(--e3);transition:background .3s var(--sortie);
+}
+.etape:hover{background:var(--papier-2)}
+.etape b{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:.75rem;color:var(--signal-fonce);font-weight:500}
+.etape p{font-size:.9375rem;color:var(--encre-2)}
+.etape span{margin-top:auto;padding-top:var(--e5);font-family:var(--police-mono);font-size:.6875rem;letter-spacing:.1em;text-transform:uppercase;color:var(--encre-2)}
+.piste-aide{margin-top:var(--e4);font-size:.8125rem;color:var(--encre-2);font-family:var(--police-mono)}
 
-/* --- 12. Méthode -------------------------------------------------------- */
-.phases{display:grid;grid-template-columns:1fr;border-top:1px solid var(--trait-fort)}
-@media (min-width:680px){.phases{grid-template-columns:1fr 1fr}}
-@media (min-width:1040px){.phases{grid-template-columns:repeat(3,1fr)}}
-.phase{padding:var(--e5) var(--e5) var(--e6) 0;border-bottom:1px solid var(--trait);display:flex;gap:var(--e4)}
-@media (min-width:680px){.phase{padding-right:var(--e6)}}
-.phase-num{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:.8125rem;color:var(--signal-fonce);flex:none;padding-top:3px}
-.phase h3{margin-bottom:var(--e2)}
-.phase p{font-size:.9375rem;color:var(--encre-2)}
-
-/* --- 13. Offres --------------------------------------------------------- */
+/* --- 11. Offres ----------------------------------------------------------- */
+.offres{display:grid;gap:1px;background:var(--trait);border:1px solid var(--trait)}
 .offre{
-  display:grid;grid-template-columns:1fr;gap:var(--e2) var(--e6);
-  padding-block:var(--e6);border-bottom:1px solid var(--trait);
+  background:var(--papier);display:grid;grid-template-columns:1fr;gap:var(--e3) var(--e6);
+  padding:var(--e7) var(--e6);transition:background .3s var(--sortie);
 }
-.offre:first-of-type{border-top:1px solid var(--trait-fort)}
-@media (min-width:860px){
-  .offre{grid-template-columns:repeat(12,1fr);gap:0;align-items:baseline}
-  .offre h3{grid-column:1 / span 3;padding-right:var(--e5)}
-  .offre p:not(.prix){grid-column:5 / span 4;padding-right:var(--e5)}
-  .offre .prix{grid-column:10 / span 3}
+.offre:hover{background:var(--papier-2)}
+@media (min-width:880px){
+  .offre{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) auto;align-items:baseline;gap:var(--e7)}
 }
-.offre h3{font-size:1.375rem;letter-spacing:-0.02em}
-.offre p{color:var(--encre-2);font-size:.9375rem}
-.offre .prix{
-  font-family:var(--police-mono);font-variant-numeric:tabular-nums;
-  font-size:1rem;
-}
+.offre h3{font-size:1.5rem}
+.offre > p{color:var(--encre-2);font-size:.9375rem}
+.offre .prix{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:1.0625rem;color:var(--encre)}
 .offre .prix small{display:block;font-size:.75rem;color:var(--encre-2);margin-top:var(--e1)}
-.offre:hover h3{color:var(--signal-fonce);transition:color .15s var(--sortie)}
 
-/* --- 14. Carnet --------------------------------------------------------- */
-.carnet{display:grid;grid-template-columns:1fr;border-top:1px solid var(--trait-fort)}
-@media (min-width:860px){.carnet{grid-template-columns:repeat(3,1fr)}}
-.entree{padding:var(--e5) var(--e6) var(--e6) 0;border-bottom:1px solid var(--trait)}
-.entree time{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:.75rem;color:var(--encre-2);display:block;margin-bottom:var(--e3)}
-.entree h3{margin-bottom:var(--e2)}
-.entree p{font-size:.9375rem;color:var(--encre-2)}
-
-/* --- 15. Studio + clôture ----------------------------------------------- */
-.studio-grille{display:grid;grid-template-columns:1fr;gap:var(--e7)}
-@media (min-width:1040px){
-  .studio-grille{grid-template-columns:repeat(12,1fr);gap:0}
-  .studio-grille > :first-child{grid-column:1 / span 5;padding-right:var(--e7)}
-  .studio-grille > .fiche{grid-column:7 / span 6}
-}
-.studio-grille p + p{margin-top:var(--e4)}
+/* --- 12. Studio ------------------------------------------------------------ */
+.studio{display:grid;grid-template-columns:1fr;gap:var(--e8)}
+@media (min-width:1000px){.studio{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:var(--e9)}}
+.studio p + p{margin-top:var(--e5)}
 .fiche{border:1px solid var(--trait-fort);align-self:start}
-.fiche div{display:flex;justify-content:space-between;gap:var(--e4);padding:var(--e3) var(--e4);border-bottom:1px solid var(--trait);font-size:.875rem}
+.fiche div{display:flex;justify-content:space-between;gap:var(--e4);padding:var(--e4);border-bottom:1px solid var(--trait);font-size:.875rem}
 .fiche div:last-child{border-bottom:0}
 .fiche dt{color:var(--encre-2)}
-.fiche dd{margin:0;font-family:var(--police-mono);font-variant-numeric:tabular-nums;text-align:right}
+.fiche dd{margin:0;font-family:var(--police-mono);text-align:right}
 
-.cloture{text-align:left;padding-block:clamp(64px,11vw,168px)}
-.cloture h2{max-width:18ch;margin-bottom:var(--e5)}
-.cloture p{color:var(--encre-2);max-width:52ch}
+/* --- 13. Clôture et pied ---------------------------------------------------- */
+.cloture{background:var(--scene);color:var(--scene-encre);padding-block:clamp(80px,13vw,180px)}
+.cloture h2{color:var(--scene-encre);max-width:16ch}
+.cloture p{color:var(--scene-encre-2);max-width:52ch;margin-top:var(--e5)}
+.cloture .scene-actions{margin-top:var(--e8)}
 
-/* --- 16. Pied ----------------------------------------------------------- */
-.pied{border-top:1px solid var(--trait-fort);padding-block:var(--e8) var(--e6);font-size:.875rem}
-.pied-grille{display:grid;grid-template-columns:1fr;gap:var(--e7)}
-@media (min-width:760px){
-  .pied-grille{grid-template-columns:repeat(12,1fr);gap:0}
-  .pied-grille > :nth-child(1){grid-column:1 / span 4;padding-right:var(--e6)}
-  .pied-grille > :nth-child(2){grid-column:5 / span 3}
-  .pied-grille > :nth-child(3){grid-column:8 / span 3}
-  .pied-grille > :nth-child(4){grid-column:11 / span 2}
+.pied{background:var(--scene);color:var(--scene-encre-2);border-top:1px solid var(--scene-trait);padding-block:var(--e8) var(--e6);font-size:.875rem}
+.pied-grille{display:grid;grid-template-columns:1fr 1fr;gap:var(--e7)}
+@media (min-width:760px){.pied-grille{grid-template-columns:2fr 1fr 1fr 1fr}}
+.pied .col-marque{grid-column:1 / -1}
+@media (min-width:760px){.pied .col-marque{grid-column:auto}}
+.pied h2{font-family:var(--police-mono);font-size:.6875rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--scene-encre-2);margin:0 0 var(--e5);line-height:1.4}
+.pied li{margin-bottom:var(--e3)}
+.pied a{color:var(--scene-encre-2);text-decoration:none;transition:color .2s var(--sortie)}
+.pied a:hover{color:var(--scene-encre)}
+.mentions{
+  display:flex;flex-wrap:wrap;gap:var(--e2) var(--e6);justify-content:space-between;
+  margin-top:var(--e9);padding-top:var(--e5);border-top:1px solid var(--scene-trait);
+  font-family:var(--police-mono);font-size:.75rem;color:var(--scene-encre-2);
 }
-.pied .titre-colonne{font-family:var(--police-mono);font-size:.6875rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--encre-2);margin:0 0 var(--e4);line-height:1.4}
-.pied li{margin-bottom:var(--e2)}
-.pied a{color:var(--encre-2);text-decoration:none;transition:color .15s var(--sortie)}
-.pied a:hover{color:var(--encre);text-decoration:underline}
-.mentions{display:flex;flex-wrap:wrap;gap:var(--e2) var(--e5);justify-content:space-between;margin-top:var(--e8);padding-top:var(--e4);border-top:1px solid var(--trait);color:var(--encre-2);font-family:var(--police-mono);font-size:.75rem}
 
-/* --- 17. Adaptations petites largeurs ----------------------------------- */
-@media (max-width:900px){
+/* --- 14. Petites largeurs ---------------------------------------------------- */
+@media (max-width:920px){
   .nav{
-    display:none;position:absolute;top:100%;left:0;right:0;
-    flex-direction:column;gap:0;background:var(--papier);
-    border-bottom:1px solid var(--trait-fort);padding:var(--e2) var(--marge) var(--e5);
+    display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0;
+    background:var(--scene-2);border-block:1px solid var(--scene-trait);
+    padding:var(--e2) var(--marge) var(--e5);
   }
   .nav[data-ouvert="true"]{display:flex}
-  .nav a{padding:var(--e3) 0;border-bottom:1px solid var(--trait);font-size:1.0625rem}
+  .nav a{padding:var(--e4) 0;border-bottom:1px solid var(--scene-trait);font-size:1.0625rem}
+  .nav a::after{display:none}
   .entete .enveloppe{position:relative}
   .outils{margin-left:auto}
   .burger{display:grid}
-  .entete .btn-signal{display:none}
+  .entete .btn{display:none}
 }
-@media (max-width:520px){
-  .actions{flex-direction:column;align-items:stretch}
-  .actions .btn{width:100%}
+@media (max-width:560px){
+  .scene-actions{flex-direction:column;align-items:stretch}
+  .scene-actions .btn{width:100%}
   .formulaire .btn{width:100%}
-}
-@media (max-width:767px){
-  .filets{grid-template-columns:repeat(4,1fr)}
-  .filets i:nth-child(n+5){display:none}
-  .filets i:nth-child(4){border-right:1px solid var(--trait)}
-  .mesures{grid-template-columns:1fr}
-  .mesure{border-right:0}
-  .mesure:nth-last-child(-n+2){border-bottom:1px solid var(--trait)}
-  .mesure:last-child{border-bottom:0}
+  .quatre{grid-template-columns:1fr}
 }
 </style>
 
-<a class="evitement" href="#contenu">Aller au contenu</a>
+<script>document.documentElement.classList.add('anim');</script>
 
-<div class="filets" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i><i style="--i:9"></i><i style="--i:10"></i><i style="--i:11"></i></div>
+<a class="evitement" href="#contenu">Aller au contenu</a>
 
 <aside class="bandeau" aria-label="Statut de cette page">
   <div class="enveloppe">
@@ -408,238 +428,245 @@ td.methode{color:var(--encre-2);font-size:.9375rem}
   </div>
 </aside>
 
+
+<main id="contenu">
+
+  <!-- ══ La scène ══ -->
+  <section class="scene" id="scene">
+    <canvas id="toile" aria-hidden="true"></canvas>
 <header class="entete">
   <div class="enveloppe">
-    <a class="marque" href="#"><span aria-hidden="true"></span>Repère</a>
+    <a class="marque" href="#"><i aria-hidden="true"></i>Repère</a>
     <nav class="nav" id="nav" aria-label="Navigation principale">
       <a href="#methode">Méthode</a>
       <a href="#offres">Offres</a>
       <a href="#audit">Audit</a>
-      <a href="#carnet">Carnet</a>
       <a href="#studio">Studio</a>
     </nav>
     <div class="outils">
-      <button class="bascule burger" id="burger" type="button" aria-expanded="false" aria-controls="nav" aria-label="Ouvrir la navigation">≡</button>
-      <button class="bascule" id="theme" type="button" data-carre aria-label="Basculer le thème clair ou sombre" title="Thème clair ou sombre"></button>
-      <a class="btn btn-signal btn-min" href="#audit">Auditer mon site</a>
+      <button class="icone burger" id="burger" type="button" aria-expanded="false" aria-controls="nav" aria-label="Ouvrir la navigation">≡</button>
+      <button class="icone" id="theme" type="button" data-carre aria-label="Basculer le thème clair ou sombre" title="Thème clair ou sombre"></button>
+      <a class="btn btn-clair" style="min-height:44px;padding:0 var(--e5);font-size:.9375rem" href="#audit">Auditer mon site</a>
     </div>
   </div>
 </header>
+    <div class="scene-voile" aria-hidden="true"></div>
 
-<main id="contenu">
-
-  <!-- ===== Héros ===== -->
-  <section class="heros">
-    <div class="enveloppe heros-grille">
-      <div>
-        <p class="etiquette" style="margin-bottom:var(--e5)">Studio de développement · Nice</p>
-        <h1>Des sites qu’on peut <em>mesurer</em>.</h1>
-        <p class="chapo">Performance, accessibilité et sécurité vérifiées à la livraison — et tous les mois qui suivent.</p>
-        <div class="actions">
-          <a class="btn btn-signal" href="#audit">Auditer mon site</a>
-          <a class="btn" href="#cloture">Prendre 20 minutes</a>
+    <div class="scene-corps">
+      <div class="enveloppe scene-grille">
+        <div>
+          <h1>
+            <span class="ligne"><span>Des sites</span></span>
+            <span class="ligne"><span>qu’on peut</span></span>
+            <span class="ligne"><span><em>mesurer</em>.</span></span>
+          </h1>
+          <p class="scene-chapo retard">
+            Performance, accessibilité et sécurité vérifiées à la livraison — et tous les mois
+            qui suivent. Pas en adjectifs : en chiffres que vous pouvez rouvrir vous-même,
+            dans votre navigateur, le jour où vous en doutez.
+          </p>
+          <div class="scene-actions retard retard-2">
+            <a class="btn btn-signal" href="#audit">Auditer mon site</a>
+            <a class="btn btn-clair" href="#cloture">Prendre 20 minutes</a>
+          </div>
         </div>
-        <p class="appui">Analyse passive, gratuite, sans formulaire. Résultat affiché intégralement à l’écran.</p>
-      </div>
 
-      <div class="cartouche">
-        <div class="cartouche-tete">
-          <span class="etiquette">Ce site, mesuré</span>
-          <span class="pastille">Exemple</span>
+        <div class="lecture retard retard-2">
+          <div class="lecture-tete">
+            <span>Plan de mesure</span>
+            <b>en direct</b>
+          </div>
+          <p>
+            La pièce à l’écran est balayée en continu par un plan de mesure. La trace
+            vermillon marque l’endroit exact où le plan coupe la matière. Rien n’est
+            décoratif : c’est ce que fait le studio, sur du logiciel.
+          </p>
+          <div class="lecture-val">
+            <strong id="cote">0,00</strong><span>mm · cote relevée</span>
+          </div>
         </div>
-        <dl class="mesures">
-          <div class="mesure"><dt>Lighthouse mobile</dt><dd>98<small> / 100</small></dd></div>
-          <div class="mesure"><dt>LCP</dt><dd>0,9<small> s</small></dd></div>
-          <div class="mesure"><dt>En-têtes</dt><dd>A+</dd></div>
-          <div class="mesure"><dt>Violations axe-core</dt><dd>0</dd></div>
-        </dl>
-        <p class="cartouche-pied">Mesuré automatiquement chaque nuit · dernière exécution le 22.08.2026 à 03:12 UTC</p>
       </div>
     </div>
   </section>
 
-  <!-- ===== Engagements ===== -->
-  <section class="section revele" id="engagements">
+  <!-- ══ Engagements chiffrés ══ -->
+  <section class="chiffres" id="engagements">
     <div class="enveloppe">
-      <div class="tete-section">
+      <div class="chiffres-tete mont">
         <h2>Ce sur quoi je m’engage par écrit</h2>
-        <p>Cinq seuils, vérifiables par n’importe qui avec un navigateur. S’ils ne sont pas tenus à la livraison, ce n’est pas livré.</p>
+        <p>Quatre seuils inscrits au contrat. Ils ne sont pas des objectifs internes : ils sont
+          vérifiés en recette, la capture est jointe au procès-verbal, et si l’un d’eux n’est pas
+          tenu, le site n’est pas livré.</p>
       </div>
-      <div class="table-enveloppe" tabindex="0" role="region" aria-label="Seuils contractuels">
-        <table>
-          <caption>Seuils contractuels, mesurés sur les pages publiques du site livré.</caption>
-          <thead>
-            <tr><th scope="col">Engagement</th><th scope="col">Seuil</th><th scope="col">Comment c’est vérifié</th></tr>
-          </thead>
-          <tbody>
-            <tr><th scope="row">Performance</th><td class="seuil">Lighthouse ≥ 95</td><td class="methode">Lighthouse mobile, profil par défaut, exécuté en intégration continue</td></tr>
-            <tr><th scope="row">Vitesse d’affichage</th><td class="seuil">LCP &lt; 1,5 s</td><td class="methode">Mesure de laboratoire, réseau bridé, plus données de terrain CrUX si le trafic le permet</td></tr>
-            <tr><th scope="row">Accessibilité</th><td class="seuil">0 violation critique</td><td class="methode">axe-core sur chaque page, WCAG 2.2 AA, plus un parcours clavier complet</td></tr>
-            <tr><th scope="row">Sécurité</th><td class="seuil">Note A+</td><td class="methode">securityheaders.com, capture d’écran jointe au procès-verbal de recette</td></tr>
-            <tr><th scope="row">Réactivité</th><td class="seuil">4 h ouvrées</td><td class="methode">Délai de première réponse, contrats d’infogérance</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <dl class="quatre">
+        <div class="q mont" data-d="1">
+          <dt>Performance</dt>
+          <dd><b><span class="compte" data-vers="95">0</span><u>/100</u></b><small>Lighthouse mobile, profil par défaut, exécuté en intégration continue à chaque commit.</small></dd>
+        </div>
+        <div class="q mont" data-d="2">
+          <dt>Affichage</dt>
+          <dd><b><span class="compte" data-vers="1.5" data-dec="1">0,0</span><u>s</u></b><small>Plus grand élément affiché, réseau bridé, complété par les données de terrain CrUX.</small></dd>
+        </div>
+        <div class="q mont" data-d="3">
+          <dt>Accessibilité</dt>
+          <dd><b><span class="compte" data-vers="0">0</span><u>violation</u></b><small>axe-core sur chaque page, WCAG 2.2 AA, plus un parcours clavier complet à la main.</small></dd>
+        </div>
+        <div class="q mont" data-d="4">
+          <dt>Sécurité</dt>
+          <dd><b>A<u>+</u></b><small>Note securityheaders.com, relevée avant mise en ligne et à chaque rapport mensuel.</small></dd>
+        </div>
+      </dl>
     </div>
   </section>
 
-  <!-- ===== Audit ===== -->
+  <!-- ══ Audit ══ -->
   <section class="section audit" id="audit">
     <div class="enveloppe audit-grille">
       <div>
-        <p class="etiquette" style="margin-bottom:var(--e4)">Outil public</p>
-        <h2>Testez votre site maintenant</h2>
-        <p class="prose" style="margin-top:var(--e4);color:var(--encre-2)">
-          Vous entrez une adresse, vous obtenez un diagnostic. Pas de formulaire avant le résultat,
-          pas de score partiel gardé en otage : tout s’affiche à l’écran, au fur et à mesure que
-          chaque contrôle rend sa réponse.
-        </p>
+        <div class="tete mont" style="margin-bottom:0">
+          <span class="etiquette">Outil public</span>
+          <h2>Testez votre site maintenant</h2>
+          <p>Vous entrez une adresse, vous obtenez un diagnostic. Pas de formulaire avant le
+            résultat, pas de score partiel gardé en otage : tout s’affiche à l’écran, bloc par
+            bloc, à mesure que chaque contrôle rend sa réponse.</p>
+        </div>
 
-        <form class="formulaire" id="formulaire" novalidate>
+        <form class="formulaire mont" data-d="1" id="formulaire" novalidate>
           <label for="url">Adresse du site à analyser</label>
           <div class="saisie">
             <input id="url" name="url" type="text" inputmode="url" autocomplete="url" value="exemple.fr" spellcheck="false">
             <button class="btn btn-signal" type="submit">Lancer l’analyse</button>
           </div>
-          <p class="aide" id="aide">Analyse passive, à partir d’informations publiquement accessibles.</p>
+          <p class="aide">Analyse passive, à partir d’informations publiquement accessibles.</p>
         </form>
 
-        <ul class="limites">
+        <ul class="limites mont" data-d="2">
           <li>Lecture des en-têtes HTTP publics, du DNS public et des API publiques de Google.</li>
           <li>Aucun scan de ports, aucun test d’injection, aucun accès à un chemin non public.</li>
           <li>Limitation de débit par adresse IP et par domaine cible.</li>
         </ul>
       </div>
 
-      <div class="resultats" id="resultats">
-        <div class="resultats-tete">
+      <div class="console mont" data-d="2">
+        <div class="console-tete">
           <strong id="cible">Aucune analyse en cours</strong>
-          <span class="pastille">Exemple de rendu</span>
+          <b class="etiquette" style="color:var(--signal-fonce)">Exemple de rendu</b>
         </div>
+        <div class="jauge" aria-hidden="true"><i id="jauge"></i></div>
         <div id="blocs" aria-live="polite" aria-busy="false">
-          <p class="vide">Les résultats apparaissent ici, bloc par bloc. Dans cette maquette, les valeurs sont fixes et aucune requête réseau n’est émise.</p>
+          <p class="vide">Les résultats apparaissent ici, bloc par bloc. Dans cette maquette, les
+            valeurs sont fixes et aucune requête réseau n’est émise.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ===== Méthode ===== -->
-  <section class="section revele" id="methode">
+  <!-- ══ Méthode ══ -->
+  <section class="section" id="methode">
     <div class="enveloppe">
-      <div class="tete-section">
-        <h2>La méthode, en neuf phases</h2>
-        <p>Chaque phase a un livrable daté et une chose attendue de vous. Vous suivez l’avancement en direct depuis votre espace, sans avoir à le demander.</p>
+      <div class="tete mont">
+        <span class="etiquette">La méthode</span>
+        <h2>Neuf phases, un livrable daté par phase</h2>
+        <p>Vous savez à tout moment où en est le projet, ce qui arrive ensuite, et ce qu’on
+          attend de vous. Pas de zone grise entre le devis et la mise en ligne.</p>
       </div>
-      <ol class="phases">
-        <li class="phase"><span class="phase-num">01</span><div><h3>Cadrage et architecture</h3><p>Atelier, arborescence, périmètre écrit. Ce qui est dedans, ce qui est dehors.</p></div></li>
-        <li class="phase"><span class="phase-num">02</span><div><h3>Direction artistique</h3><p>Tokens, typographie, grille. Deux gabarits maquettés, pas quinze.</p></div></li>
-        <li class="phase"><span class="phase-num">03</span><div><h3>Contenus et rédaction</h3><p>Textes réels dès le départ. Aucune maquette validée sur du faux texte.</p></div></li>
-        <li class="phase"><span class="phase-num">04</span><div><h3>Intégration</h3><p>HTML sémantique, zéro JavaScript sur les pages sans interaction réelle.</p></div></li>
-        <li class="phase"><span class="phase-num">05</span><div><h3>Développement</h3><p>Fonctions métier, connecteurs, back-office. Tests écrits en même temps.</p></div></li>
-        <li class="phase"><span class="phase-num">06</span><div><h3>Accessibilité et performance</h3><p>axe-core, parcours clavier, lecteur d’écran, budget de poids appliqué au build.</p></div></li>
-        <li class="phase"><span class="phase-num">07</span><div><h3>Sécurité et durcissement</h3><p>CSP, en-têtes, TLS, dépendances, secrets. Rapport avant et après.</p></div></li>
-        <li class="phase"><span class="phase-num">08</span><div><h3>Recette et mise en ligne</h3><p>Procès-verbal chiffré, transfert des accès, documentation d’exploitation.</p></div></li>
-        <li class="phase"><span class="phase-num">09</span><div><h3>Exploitation</h3><p>Supervision, sauvegardes testées, mises à jour, rapport mensuel.</p></div></li>
-      </ol>
+      <div class="piste mont" data-d="1" tabindex="0" role="region" aria-label="Les neuf phases de la méthode">
+        <article class="etape"><b>01</b><h3>Cadrage et architecture</h3><p>Atelier, arborescence, périmètre écrit. Ce qui est dedans et, surtout, ce qui est dehors.</p><span>Livrable : note de cadrage</span></article>
+        <article class="etape"><b>02</b><h3>Direction artistique</h3><p>Tokens, typographie, composition. Deux gabarits maquettés jusqu’au pixel, pas quinze esquisses.</p><span>Livrable : deux gabarits</span></article>
+        <article class="etape"><b>03</b><h3>Contenus et rédaction</h3><p>Textes réels dès le premier écran. Aucune maquette n’est validée sur du faux texte.</p><span>Livrable : contenus relus</span></article>
+        <article class="etape"><b>04</b><h3>Intégration</h3><p>HTML sémantique, zéro JavaScript sur les pages qui n’ont aucune interaction réelle.</p><span>Livrable : préproduction</span></article>
+        <article class="etape"><b>05</b><h3>Développement</h3><p>Fonctions métier, connecteurs, back-office. Les tests s’écrivent en même temps, pas après.</p><span>Livrable : suite de tests</span></article>
+        <article class="etape"><b>06</b><h3>Accessibilité et performance</h3><p>axe-core, parcours clavier, lecteur d’écran, budget de poids appliqué au build.</p><span>Livrable : rapport chiffré</span></article>
+        <article class="etape"><b>07</b><h3>Sécurité et durcissement</h3><p>CSP, en-têtes, TLS, dépendances, secrets. Un relevé avant, un relevé après.</p><span>Livrable : relevé A+</span></article>
+        <article class="etape"><b>08</b><h3>Recette et mise en ligne</h3><p>Procès-verbal chiffré, transfert des accès, documentation d’exploitation remise en main propre.</p><span>Livrable : PV de recette</span></article>
+        <article class="etape"><b>09</b><h3>Exploitation</h3><p>Supervision, sauvegardes testées — testées, pas seulement planifiées — mises à jour, rapport mensuel.</p><span>Livrable : rapport mensuel</span></article>
+      </div>
+      <p class="piste-aide">← faites défiler la piste →</p>
     </div>
   </section>
 
-  <!-- ===== Offres ===== -->
-  <section class="section revele" id="offres">
+  <!-- ══ Offres ══ -->
+  <section class="section" id="offres" style="padding-top:0">
     <div class="enveloppe">
-      <div class="tete-section">
+      <div class="tete mont">
+        <span class="etiquette">Les offres</span>
         <h2>Cinq façons de travailler ensemble</h2>
-        <p>Les prix sont affichés parce qu’un prix caché fait perdre du temps à tout le monde.</p>
+        <p>Les prix sont affichés. Un tarif caché fait perdre du temps à tout le monde, et
+          surtout à celui qui n’avait pas le budget dès le départ.</p>
       </div>
-
-      <article class="offre">
-        <h3>Sites institutionnels sur-mesure</h3>
-        <p>Codés à la main, sans thème ni constructeur de pages. Performance, WCAG 2.2 AA, sécurité, SEO technique. Institutions, cabinets, PME établies, secteur public.</p>
-        <p class="prix">à partir de 3 800 €<small>engagement de seuils inclus</small></p>
-      </article>
-
-      <article class="offre">
-        <h3>Applications métier et portails</h3>
-        <p>Catalogue connecté à un logiciel métier, back-office sur-mesure, connecteurs, tableaux de bord. On se branche aux systèmes existants, on ne les remplace pas.</p>
-        <p class="prix">à partir de 8 000 €<small>chiffrage après cadrage</small></p>
-      </article>
-
-      <article class="offre">
-        <h3>Automatisation et intégration</h3>
-        <p>Connecter des outils qui ne se parlent pas, supprimer les ressaisies. Flux XML et API, synchronisations, notifications, rapports automatiques.</p>
-        <p class="prix">au forfait ou en jours<small>selon le périmètre</small></p>
-      </article>
-
-      <article class="offre">
-        <h3>Audit et durcissement sécurité</h3>
-        <p>Surface exposée, en-têtes HTTP, TLS, DNS, SPF, DKIM, DMARC, dépendances, fichiers accessibles. Rapport priorisé et plan de remédiation. Mise en conformité RGPD technique.</p>
-        <p class="prix">à partir de 550 €<small>rapport sous 5 jours ouvrés</small></p>
-      </article>
-
-      <article class="offre">
-        <h3>Infogérance et exploitation</h3>
-        <p>Hébergement, supervision, sauvegardes testées, mises à jour, rapport mensuel, engagement de réponse contractuel.</p>
-        <p class="prix">49 / 129 / 390 € par mois<small>trois niveaux</small></p>
-      </article>
-    </div>
-  </section>
-
-  <!-- ===== Carnet ===== -->
-  <section class="section revele" id="carnet">
-    <div class="enveloppe">
-      <div class="tete-section">
-        <h2>Carnet de bord</h2>
-        <p>Ce qui est expédié, daté. <span class="pastille">Exemple</span></p>
-      </div>
-      <div class="carnet">
-        <article class="entree">
-          <time datetime="2026-08-19">19 août 2026</time>
-          <h3>Budget de poids bloquant en intégration continue</h3>
-          <p>Le build échoue désormais au-delà de 28 ko de CSS et 90 ko de JavaScript compressés. Trois pages étaient déjà au-dessus.</p>
+      <div class="offres">
+        <article class="offre mont">
+          <h3>Sites institutionnels sur-mesure</h3>
+          <p>Codés à la main, sans thème acheté ni constructeur de pages. Performance, WCAG 2.2 AA,
+            sécurité, SEO technique. Institutions, cabinets, PME établies, secteur public.</p>
+          <p class="prix">à partir de 3 800 €<small>engagement de seuils inclus</small></p>
         </article>
-        <article class="entree">
-          <time datetime="2026-08-12">12 août 2026</time>
-          <h3>Polices : métriques de repli mesurées</h3>
-          <p>Ajustement de <span class="mono">size-adjust</span> et <span class="mono">ascent-override</span> sur les trois familles. Décalage cumulé ramené à 0,000.</p>
+        <article class="offre mont" data-d="1">
+          <h3>Applications métier et portails</h3>
+          <p>Catalogue connecté à un logiciel métier, back-office sur-mesure, connecteurs,
+            tableaux de bord. On se branche aux systèmes existants, on ne les remplace pas.</p>
+          <p class="prix">à partir de 8 000 €<small>chiffrage après cadrage</small></p>
         </article>
-        <article class="entree">
-          <time datetime="2026-08-05">5 août 2026</time>
-          <h3>Politique de sécurité de contenu en observation</h3>
-          <p>CSP passée en <span class="mono">report-only</span> sur l’ensemble du site pendant sept jours avant durcissement. Deux violations relevées, corrigées.</p>
+        <article class="offre mont" data-d="2">
+          <h3>Automatisation et intégration</h3>
+          <p>Connecter des outils qui ne se parlent pas, supprimer les ressaisies. Flux XML et API,
+            synchronisations, notifications, rapports automatiques.</p>
+          <p class="prix">au forfait ou en jours<small>selon le périmètre</small></p>
+        </article>
+        <article class="offre mont" data-d="3">
+          <h3>Audit et durcissement sécurité</h3>
+          <p>Surface exposée, en-têtes HTTP, TLS, DNS, SPF, DKIM, DMARC, dépendances, fichiers
+            accessibles. Rapport priorisé, plan de remédiation, mise en conformité RGPD technique.</p>
+          <p class="prix">à partir de 550 €<small>rapport sous 5 jours ouvrés</small></p>
+        </article>
+        <article class="offre mont" data-d="4">
+          <h3>Infogérance et exploitation</h3>
+          <p>Hébergement, supervision, sauvegardes testées, mises à jour, rapport mensuel,
+            engagement de réponse contractuel.</p>
+          <p class="prix">49 / 129 / 390 € par mois<small>trois niveaux</small></p>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- ===== Studio ===== -->
-  <section class="section revele" id="studio">
-    <div class="enveloppe studio-grille">
-      <div>
-        <div class="tete-section" style="margin-bottom:var(--e5)"><h2>Le studio</h2></div>
+  <!-- ══ Studio ══ -->
+  <section class="section" id="studio" style="padding-top:0">
+    <div class="enveloppe studio">
+      <div class="mont">
+        <span class="etiquette" style="display:block;margin-bottom:var(--e4)">Le studio</span>
+        <h2 style="margin-bottom:var(--e6)">Une personne, et rien à déléguer</h2>
         <div class="prose" style="color:var(--encre-2)">
-          <p>Repère est un studio de développement basé à Nice, fondé par Rafael. Il construit des sites institutionnels et des outils métier, et il en publie les mesures.</p>
-          <p>Le parcours est technique : informatique et sécurité, CompTIA Security+, BUT Informatique en alternance en cours. Venir de la sécurité plutôt que du graphisme change la manière de construire — on commence par ce qui est vérifiable, l’apparence suit.</p>
-          <p>Pas de références publiables pour l’instant, et pas de faux projets pour combler le vide. Ce que vous pouvez juger : ce site, ses en-têtes, son code source, et l’outil d’audit ci-dessus appliqué au site de votre choix.</p>
+          <p>Repère est un studio de développement basé à Nice, fondé par Rafael. Il construit des
+            sites institutionnels et des outils métier, et il en publie les mesures.</p>
+          <p>Le parcours est technique : informatique et sécurité, CompTIA Security+, BUT
+            Informatique en alternance en cours. Venir de la sécurité plutôt que du graphisme
+            change l’ordre dans lequel on construit — on commence par ce qui est vérifiable,
+            l’apparence vient ensuite et s’en trouve mieux tenue.</p>
+          <p>Pas de références publiables pour l’instant, et pas de faux projets pour combler le
+            vide. Ce que vous pouvez juger dès maintenant : cette page, son code source, ses
+            en-têtes, et l’outil d’audit appliqué au site de votre choix.</p>
         </div>
       </div>
-      <dl class="fiche">
+      <dl class="fiche mont" data-d="1">
         <div><dt>Base</dt><dd>Nice, Côte d’Azur</dd></div>
         <div><dt>Interlocuteur</dt><dd>direct, une personne</dd></div>
         <div><dt>Première réponse</dt><dd>4 h ouvrées</dd></div>
-        <div><dt>Ce qu’on ne fait pas</dt><dd>sites à 500 €</dd></div>
+        <div><dt>Ce qu’on ne fait pas</dt><dd>des sites à 500 €</dd></div>
         <div><dt>Ce qu’on ne promet pas</dt><dd>une position Google</dd></div>
       </dl>
     </div>
   </section>
 
-  <!-- ===== Clôture ===== -->
-  <section class="section cloture" id="cloture">
+  <!-- ══ Clôture ══ -->
+  <section class="cloture" id="cloture">
     <div class="enveloppe">
-      <h2>Vingt minutes suffisent pour savoir si c’est pertinent.</h2>
-      <p>Vous décrivez le besoin, je dis ce que ça coûte et ce que ça ne résout pas. S’il n’y a pas de projet, on se le dit à la fin de l’appel.</p>
-      <div class="actions">
+      <h2 class="mont">Vingt minutes suffisent pour savoir si c’est pertinent.</h2>
+      <p class="mont" data-d="1">Vous décrivez le besoin, je dis ce que ça coûte, combien de temps ça prend, et
+        ce que ça ne résoudra pas. S’il n’y a pas de projet, on se le dit à la fin de l’appel plutôt
+        qu’après trois relances.</p>
+      <div class="scene-actions mont" data-d="2">
         <a class="btn btn-signal" href="#">Prendre 20 minutes</a>
-        <a class="btn" href="#audit">Commencer par un audit</a>
+        <a class="btn btn-clair" href="#audit">Commencer par un audit</a>
       </div>
     </div>
   </section>
@@ -648,13 +675,13 @@ td.methode{color:var(--encre-2);font-size:.9375rem}
 <footer class="pied">
   <div class="enveloppe">
     <div class="pied-grille">
-      <div>
-        <a class="marque" href="#" style="margin-bottom:var(--e4)"><span aria-hidden="true"></span>Repère</a>
-        <p style="color:var(--encre-2);max-width:30ch">Sites institutionnels, applications métier et sécurité. Nice, Côte d’Azur.</p>
+      <div class="col-marque">
+        <a class="marque" href="#" style="margin-bottom:var(--e5)"><i aria-hidden="true"></i>Repère</a>
+        <p style="max-width:30ch">Sites institutionnels, applications métier et sécurité. Nice, Côte d’Azur.</p>
       </div>
-      <div><h2 class="titre-colonne">Offres</h2><ul><li><a href="#offres">Sites institutionnels</a></li><li><a href="#offres">Applications métier</a></li><li><a href="#offres">Audit sécurité</a></li><li><a href="#offres">Infogérance</a></li></ul></div>
-      <div><h2 class="titre-colonne">Studio</h2><ul><li><a href="#methode">La méthode</a></li><li><a href="#carnet">Carnet de bord</a></li><li><a href="#studio">Qui je suis</a></li><li><a href="#cloture">Contact</a></li></ul></div>
-      <div><h2 class="titre-colonne">Légal</h2><ul><li><a href="#">Mentions légales</a></li><li><a href="#">Confidentialité</a></li><li><a href="#">Accessibilité</a></li><li><a href="#">Espace client</a></li></ul></div>
+      <div><h2>Offres</h2><ul><li><a href="#offres">Sites institutionnels</a></li><li><a href="#offres">Applications métier</a></li><li><a href="#offres">Audit sécurité</a></li><li><a href="#offres">Infogérance</a></li></ul></div>
+      <div><h2>Studio</h2><ul><li><a href="#methode">La méthode</a></li><li><a href="#studio">Qui je suis</a></li><li><a href="#cloture">Contact</a></li><li><a href="#">Carnet de bord</a></li></ul></div>
+      <div><h2>Légal</h2><ul><li><a href="#">Mentions légales</a></li><li><a href="#">Confidentialité</a></li><li><a href="#">Accessibilité</a></li><li><a href="#">Espace client</a></li></ul></div>
     </div>
     <div class="mentions">
       <span>© 2026 Repère · repere.fr</span>
@@ -666,27 +693,26 @@ td.methode{color:var(--encre-2);font-size:.9375rem}
 <script>
 (function () {
   'use strict';
-
-  /* --- Thème : choix explicite, sinon celui du système ------------------ */
   var racine = document.documentElement;
   if (racine.lang !== 'fr') racine.lang = 'fr';
+  var doux = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* ═══ Thème ═══════════════════════════════════════════════════════════ */
   var boutonTheme = document.getElementById('theme');
   try {
     var memo = localStorage.getItem('repere-theme');
     if (memo === 'dark' || memo === 'light') racine.setAttribute('data-theme', memo);
-  } catch (e) { /* stockage indisponible : on garde le thème du système */ }
-
+  } catch (e) {}
   boutonTheme.addEventListener('click', function () {
-    var sombreSysteme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var actuel = racine.getAttribute('data-theme') || (sombreSysteme ? 'dark' : 'light');
+    var sombre = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var actuel = racine.getAttribute('data-theme') || (sombre ? 'dark' : 'light');
     var suivant = actuel === 'dark' ? 'light' : 'dark';
     racine.setAttribute('data-theme', suivant);
     try { localStorage.setItem('repere-theme', suivant); } catch (e) {}
   });
 
-  /* --- Navigation repliée sur petite largeur --------------------------- */
-  var burger = document.getElementById('burger');
-  var nav = document.getElementById('nav');
+  /* ═══ Navigation repliée ═══════════════════════════════════════════════ */
+  var burger = document.getElementById('burger'), nav = document.getElementById('nav');
   burger.addEventListener('click', function () {
     var ouvert = nav.getAttribute('data-ouvert') === 'true';
     nav.setAttribute('data-ouvert', String(!ouvert));
@@ -694,103 +720,429 @@ td.methode{color:var(--encre-2);font-size:.9375rem}
     burger.setAttribute('aria-label', ouvert ? 'Ouvrir la navigation' : 'Fermer la navigation');
   });
   nav.addEventListener('click', function (ev) {
-    if (ev.target.tagName === 'A') {
-      nav.setAttribute('data-ouvert', 'false');
-      burger.setAttribute('aria-expanded', 'false');
-    }
+    if (ev.target.tagName === 'A') { nav.setAttribute('data-ouvert', 'false'); burger.setAttribute('aria-expanded', 'false'); }
   });
 
-  /* --- Démonstration de l'arrivée progressive des blocs d'audit --------
-     Aucune requête réseau : cette maquette illustre la séquence d'affichage,
-     pas la mesure. Les valeurs sont figées.                               */
-  var EXEMPLES = [
-    { nom: 'En-têtes de sécurité', detail: 'CSP absente · HSTS présent · Referrer-Policy absente', note: 'C', etat: 'alerte', delai: 400 },
-    { nom: 'Messagerie du domaine', detail: 'SPF valide · DMARC en p=none · DKIM trouvé sur le sélecteur google', note: 'B', etat: 'alerte', delai: 900 },
-    { nom: 'Référencement technique', detail: 'title, description et canonique présents · sitemap.xml introuvable', note: 'B+', etat: 'ok', delai: 1500 },
-    { nom: 'Poids de la page', detail: '1,8 Mo au premier chargement · 7 domaines tiers contactés', note: 'D', etat: 'erreur', delai: 2100 },
-    { nom: 'Performance mobile', detail: 'PageSpeed Insights · LCP 4,1 s · INP 240 ms', note: '41', etat: 'erreur', delai: 4200 }
-  ];
+  /* ═══ Apparitions ══════════════════════════════════════════════════════
+     Un observateur, pas une plage de défilement : l'élément atteint son
+     état final dès qu'il entre dans le cadre, et y reste.                 */
 
-  var formulaire = document.getElementById('formulaire');
-  var champ = document.getElementById('url');
-  var cible = document.getElementById('cible');
-  var blocs = document.getElementById('blocs');
-  var minuteurs = [];
-  var reduit = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-  function nettoieDomaine(valeur) {
-    var v = String(valeur).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(v) ? v : null;
+  /* ═══ Apparitions ══════════════════════════════════════════════════════
+     Un contrôle de position, calé sur rAF. Déterministe : un bloc franchi
+     est révélé au tick suivant, quelle que soit la charge.                 */
+  var aMonter = [].slice.call(document.querySelectorAll('.mont'));
+  if (doux.matches) {
+    aMonter = [];
+  } else {
+    // Volontairement PAS dans requestAnimationFrame : c'est la file que la
+    // boucle de rendu 3D sature. Simple limitation temporelle, lecture de
+    // géométrie seule, aucune écriture — donc aucun recalcul forcé.
+    var dernierPasse = 0;
+    var passe = function () {
+      dernierPasse = Date.now();
+      var seuil = window.innerHeight * 0.94;
+      for (var i = aMonter.length - 1; i >= 0; i--) {
+        if (aMonter[i].getBoundingClientRect().top < seuil) {
+          aMonter[i].classList.add('vu');
+          aMonter.splice(i, 1);
+        }
+      }
+      if (!aMonter.length) {
+        window.removeEventListener('scroll', demande);
+        window.removeEventListener('resize', demande);
+      }
+      return aMonter.length;
+    };
+    var tempoPasse = 0;
+    var demande = function () {
+      var depuis = Date.now() - dernierPasse;
+      if (depuis >= 80) { passe(); }
+      else if (!tempoPasse) { tempoPasse = setTimeout(function () { tempoPasse = 0; passe(); }, 80 - depuis); }
+    };
+    window.addEventListener('scroll', demande, { passive: true });
+    window.addEventListener('resize', demande, { passive: true });
+    demande();
   }
 
-  function ligne(item) {
+  /* ═══ Compteurs des engagements ════════════════════════════════════════ */
+  function compte(el) {
+    var vers = parseFloat(el.getAttribute('data-vers'));
+    var dec = parseInt(el.getAttribute('data-dec') || '0', 10);
+    if (doux.matches || vers === 0) { el.textContent = vers.toFixed(dec).replace('.', ','); return; }
+    var t0 = performance.now(), duree = 1100;
+    (function pas(t) {
+      var k = Math.min(1, (t - t0) / duree);
+      var e = 1 - Math.pow(1 - k, 3);
+      el.textContent = (vers * e).toFixed(dec).replace('.', ',');
+      if (k < 1) requestAnimationFrame(pas);
+    })(t0);
+  }
+  var compteurs = [].slice.call(document.querySelectorAll('.compte'));
+  function fige(el){
+    var v = parseFloat(el.getAttribute('data-vers'));
+    el.textContent = v.toFixed(parseInt(el.getAttribute('data-dec') || '0', 10)).replace('.', ',');
+  }
+  if ('IntersectionObserver' in window && !doux.matches) {
+    var faits = [];
+    var obsC = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { compte(e.target); faits.push(e.target); obsC.unobserve(e.target); } });
+    }, { threshold: 0.25 });
+    compteurs.forEach(function (el) { obsC.observe(el); });
+    // Un chiffre qui reste bloqué à zéro est pire que pas d'animation du tout.
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        compteurs.forEach(function (el) { if (faits.indexOf(el) === -1) fige(el); });
+      }, 6000);
+    });
+  } else { compteurs.forEach(fige); }
+
+  /* ═══ Console d'audit : démonstration de l'affichage progressif ════════
+     Aucune requête réseau. Seule la séquence est réelle.                  */
+  var EXEMPLES = [
+    { nom:'En-têtes de sécurité',   detail:'CSP absente · HSTS présent · Referrer-Policy absente',              note:'C',  etat:'alerte', delai:400 },
+    { nom:'Messagerie du domaine',  detail:'SPF valide · DMARC en p=none · DKIM trouvé sur le sélecteur google', note:'B',  etat:'alerte', delai:900 },
+    { nom:'Référencement technique',detail:'title, description et canonique présents · sitemap.xml introuvable', note:'B+', etat:'ok',     delai:1500 },
+    { nom:'Poids de la page',       detail:'1,8 Mo au premier chargement · 7 domaines tiers contactés',          note:'D',  etat:'erreur', delai:2100 },
+    { nom:'Performance mobile',     detail:'PageSpeed Insights · LCP 4,1 s · INP 240 ms',                        note:'41', etat:'erreur', delai:4200 }
+  ];
+  var formulaire = document.getElementById('formulaire'), champ = document.getElementById('url'),
+      cible = document.getElementById('cible'), blocs = document.getElementById('blocs'),
+      jauge = document.getElementById('jauge'), minuteurs = [];
+
+  function nettoie(v) {
+    var s = String(v).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(s) ? s : null;
+  }
+  function ligne(item, attente) {
     var el = document.createElement('div');
-    el.className = 'bloc';
-    el.setAttribute('data-neuf', '');
-
-    var gauche = document.createElement('div');
-    var nom = document.createElement('p');
-    nom.className = 'bloc-nom';
-    nom.textContent = item.nom;
-    var detail = document.createElement('p');
-    detail.className = 'bloc-detail';
-    detail.textContent = item.detail;
-    gauche.appendChild(nom);
-    gauche.appendChild(detail);
-
+    el.className = 'bloc' + (attente ? '' : ' neuf');
+    var g = document.createElement('div');
+    var n = document.createElement('p'); n.className = 'bloc-nom'; n.textContent = item.nom; g.appendChild(n);
+    if (!attente) { var d = document.createElement('p'); d.className = 'bloc-detail'; d.textContent = item.detail; g.appendChild(d); }
     var note = document.createElement('span');
     note.className = 'note';
-    note.setAttribute('data-etat', item.etat);
-    note.textContent = item.note;
-
-    el.appendChild(gauche);
-    el.appendChild(note);
+    note.setAttribute('data-etat', attente ? 'attente' : item.etat);
+    note.textContent = attente ? 'en cours' : item.note;
+    el.appendChild(g); el.appendChild(note);
     return el;
   }
-
   formulaire.addEventListener('submit', function (ev) {
     ev.preventDefault();
-    minuteurs.forEach(clearTimeout);
-    minuteurs = [];
-
-    var domaine = nettoieDomaine(champ.value);
-    if (!domaine) {
-      blocs.innerHTML = '';
-      var err = document.createElement('p');
-      err.className = 'vide';
-      err.textContent = 'Cette adresse n’est pas exploitable. Entrez un nom de domaine, par exemple exemple.fr.';
-      blocs.appendChild(err);
-      cible.textContent = 'Aucune analyse en cours';
-      champ.focus();
-      return;
-    }
-
-    cible.textContent = domaine;
+    minuteurs.forEach(clearTimeout); minuteurs = [];
+    var domaine = nettoie(champ.value);
     blocs.innerHTML = '';
+    if (!domaine) {
+      var err = document.createElement('p'); err.className = 'vide';
+      err.textContent = 'Cette adresse n’est pas exploitable. Entrez un nom de domaine, par exemple exemple.fr.';
+      blocs.appendChild(err); cible.textContent = 'Aucune analyse en cours';
+      jauge.style.transform = 'scaleX(0)'; champ.focus(); return;
+    }
+    cible.textContent = domaine;
     blocs.setAttribute('aria-busy', 'true');
-
-    EXEMPLES.forEach(function (item) {
-      var attente = document.createElement('div');
-      attente.className = 'bloc';
-      var g = document.createElement('div');
-      var n = document.createElement('p');
-      n.className = 'bloc-nom';
-      n.textContent = item.nom;
-      g.appendChild(n);
-      var etat = document.createElement('span');
-      etat.className = 'note';
-      etat.setAttribute('data-etat', 'attente');
-      etat.textContent = 'en cours';
-      attente.appendChild(g);
-      attente.appendChild(etat);
+    jauge.style.transition = 'none'; jauge.style.transform = 'scaleX(0)';
+    var total = EXEMPLES[EXEMPLES.length - 1].delai;
+    requestAnimationFrame(function () {
+      jauge.style.transition = 'transform ' + (doux.matches ? 0 : total) + 'ms linear';
+      jauge.style.transform = 'scaleX(1)';
+    });
+    EXEMPLES.forEach(function (item, i) {
+      var attente = ligne(item, true);
       blocs.appendChild(attente);
-
-      var delai = reduit.matches ? 0 : item.delai;
       minuteurs.push(setTimeout(function () {
-        blocs.replaceChild(ligne(item), attente);
-        if (item === EXEMPLES[EXEMPLES.length - 1]) blocs.setAttribute('aria-busy', 'false');
-      }, delai));
+        blocs.replaceChild(ligne(item, false), attente);
+        if (i === EXEMPLES.length - 1) blocs.setAttribute('aria-busy', 'false');
+      }, doux.matches ? 0 : item.delai));
     });
   });
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     LA SCÈNE — raymarcher SDF en WebGL, écrit à la main.
+     Une pièce usinée balayée par un plan de mesure ; la trace vermillon
+     marque l'intersection exacte du plan et de la matière.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var toile = document.getElementById('toile'), scene = document.getElementById('scene');
+
+  var VS = [
+    'attribute vec2 p;',
+    'void main(){ gl_Position = vec4(p, 0.0, 1.0); }'
+  ].join('\n');
+
+  var FS = [
+    'precision highp float;',
+    'uniform vec2 uRes; uniform float uTime; uniform vec2 uPtr; uniform float uPas;',
+    '',
+    'mat2 rot(float a){ float c=cos(a), s=sin(a); return mat2(c,-s,s,c); }',
+    'float sdBox(vec3 p, vec3 b){ vec3 q=abs(p)-b; return length(max(q,0.0))+min(max(q.x,max(q.y,q.z)),0.0); }',
+    'float sdOct(vec3 p, float s){ p=abs(p); return (p.x+p.y+p.z-s)*0.5773502692; }',
+    'float sdCyl(vec3 p, float r, float h){ vec2 d=vec2(length(p.xz)-r, abs(p.y)-h); return min(max(d.x,d.y),0.0)+length(max(d,0.0)); }',
+    '',
+    '// La pièce : un bloc chanfreiné, aléso sur un axe, rainuré, lamé deux fois.',
+    'uniform vec3 uPos;',
+    'float piece(vec3 p){',
+    '  vec3 q = p - uPos;',
+    '  q.xz *= rot(uTime*0.22);',
+    '  q.yz *= rot(0.46);',
+    '  q.xy *= rot(-0.13);',
+    '  float d = sdBox(q, vec3(0.74,0.46,0.62));',
+    '  d = max(d, sdOct(q, 1.60));',
+    '  d = max(d, -sdCyl(q.yzx, 0.215, 1.4));',
+    '  d = max(d, -sdBox(q - vec3(0.0,0.46,0.0), vec3(0.068,0.12,0.80)));',
+    '  d = max(d, -sdCyl(q - vec3(0.42,0.0,0.0), 0.082, 0.8));',
+    '  d = max(d, -sdCyl(q + vec3(0.42,0.0,0.0), 0.082, 0.8));',
+    '  return d;',
+    '}',
+    'float sol(vec3 p){ return p.y + 0.94; }',
+    'float carte(vec3 p){ return min(piece(p), sol(p)); }',
+    '',
+    'vec3 normale(vec3 p){',
+    '  vec2 e = vec2(0.0016, 0.0);',
+    '  return normalize(vec3(',
+    '    carte(p+e.xyy)-carte(p-e.xyy),',
+    '    carte(p+e.yxy)-carte(p-e.yxy),',
+    '    carte(p+e.yyx)-carte(p-e.yyx)));',
+    '}',
+    'float ombre(vec3 ro, vec3 rd){',
+    '  float res=1.0, t=0.07;',
+    '  for(int i=0;i<26;i++){',
+    '    float h = carte(ro+rd*t);',
+    '    res = min(res, 9.0*h/t);',
+    '    t += clamp(h, 0.035, 0.32);',
+    '    if(res < 0.005 || t > 8.0) break;',
+    '  }',
+    '  return clamp(res, 0.0, 1.0);',
+    '}',
+    'float occlusion(vec3 p, vec3 n){',
+    '  float o=0.0, s=1.0;',
+    '  for(int i=0;i<5;i++){',
+    '    float h = 0.02 + 0.13*float(i)/4.0;',
+    '    o += (h - carte(p+n*h))*s;',
+    '    s *= 0.72;',
+    '  }',
+    '  return clamp(1.0 - 1.55*o, 0.0, 1.0);',
+    '}',
+    'vec3 aces(vec3 x){',
+    '  return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0);',
+    '}',
+    'float bruit(vec2 c){ return fract(sin(dot(c, vec2(12.9898,78.233)))*43758.5453); }',
+    '',
+    'void main(){',
+    '  float portrait = step(uRes.x/uRes.y, 1.05);',
+    '  vec2 uv = (gl_FragCoord.xy - 0.5*uRes) / uRes.y;',
+    '  uv.y -= 0.30*portrait;   // en portrait, la pièce se cale dans la bande haute',
+    '  vec3 VERM = vec3(0.945, 0.392, 0.216);',
+    '  vec3 FOND = vec3(0.055, 0.061, 0.075);',
+    '',
+    '  vec3 ro = vec3(uPos.x*0.30 + uPtr.x*0.30, 0.40 + uPtr.y*0.20, 10.2 + 1.6*portrait);',
+    '  vec3 ta = vec3(uPos.x*0.78, uPos.y*0.72 - 0.04, 0.0);',
+    '  vec3 w = normalize(ta-ro), u = normalize(cross(w, vec3(0.0,1.0,0.0))), v = cross(u, w);',
+    '  vec3 rd = normalize(uv.x*u + uv.y*v + 3.05*w);',
+    '',
+    '  float planY = uPos.y + sin(uTime*0.50)*0.58;',
+    '',
+    '  float t = 0.0; float m = 0.0; bool touche = false;',
+    '  for(int i=0;i<100;i++){',
+    '    if(float(i) > uPas) break;',
+    '    vec3 p = ro + rd*t;',
+    '    float h = carte(p);',
+    '    if(h < 0.0010*t){ touche = true; m = (piece(p) < sol(p)) ? 1.0 : 2.0; break; }',
+    '    t += h*0.92;',
+    '    if(t > 16.0) break;',
+    '  }',
+    '',
+    '  vec3 col = FOND * (1.0 - 0.35*length(uv));',
+    '',
+    '  if(touche){',
+    '    vec3 p = ro + rd*t;',
+    '    vec3 n = normale(p);',
+    '    vec3 lig = normalize(vec3(0.52, 0.76, 0.42));',
+    '    float dif = clamp(dot(n, lig), 0.0, 1.0);',
+    '    float sha = ombre(p + n*0.012, lig);',
+    '    float occ = occlusion(p, n);',
+    '    float ciel = clamp(0.5 + 0.5*n.y, 0.0, 1.0);',
+    '',
+    '    vec3 alb = (m < 1.5) ? vec3(0.196, 0.202, 0.212) : vec3(0.056, 0.062, 0.076);',
+    '    if(m > 1.5){',
+    '      float r = length(p.xz - uPos.xz);',
+    '      alb *= 1.0 - 0.55*smoothstep(1.0, 6.5, r);',
+    '    }',
+    '',
+    '    col  = alb * dif * sha * vec3(1.00, 0.972, 0.936) * 1.92;',
+    '    col += alb * ciel * occ * vec3(0.105, 0.125, 0.165);',
+    '    col += alb * occ * 0.028;',
+    '',
+    '    if(m < 1.5){',
+    '      float fres = pow(1.0 - clamp(dot(n, -rd), 0.0, 1.0), 3.2);',
+    '      col += VERM * fres * occ * 0.52;',
+    '      vec3 hv = normalize(lig - rd);',
+    '      col += vec3(1.0,0.98,0.95) * pow(clamp(dot(n,hv),0.0,1.0), 68.0) * sha * 1.30;',
+    '      // la trace du plan de mesure sur la matière',
+    '      float trace = smoothstep(0.030, 0.0, abs(p.y - planY));',
+    '      col = mix(col, VERM*2.30, trace);',
+    '      col += VERM * smoothstep(0.14, 0.0, abs(p.y - planY)) * 0.16;',
+    '    }',
+    '  }',
+    '',
+    '  // le plan lui-même, vu par transparence avant la première surface',
+    '  float tp = (planY - ro.y) / rd.y;',
+    '  if(tp > 0.0 && (!touche || tp < t)){',
+    '    vec3 pp = ro + rd*tp;',
+    '    float r2 = dot(pp.xz - uPos.xz, pp.xz - uPos.xz);',
+    '    col += VERM * exp(-r2*0.34) * 0.085;',
+    '  }',
+    '',
+    '  col = aces(col * 1.02);',
+    '  col = pow(col, vec3(0.4545));',
+    '  col *= 1.0 - 0.30*dot(uv, uv);',
+    '  col += (bruit(gl_FragCoord.xy) - 0.5) / 200.0;',
+    '  gl_FragColor = vec4(col, 1.0);',
+    '}'
+  ].join('\n');
+
+  function compile(gl, type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); return null; }
+    return s;
+  }
+
+  function demarreScene() {
+    var gl = null;
+    try {
+      gl = toile.getContext('webgl', { antialias:false, alpha:false, powerPreference:'default', depth:false });
+    } catch (e) {}
+    if (!gl) return false;  // repli : la scène garde son fond sombre, le texte reste lisible
+
+    var vs = compile(gl, gl.VERTEX_SHADER, VS), fs = compile(gl, gl.FRAGMENT_SHADER, FS);
+    if (!vs || !fs) return false;
+    var prog = gl.createProgram();
+    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.warn(gl.getProgramInfoLog(prog)); return false; }
+    gl.useProgram(prog);
+
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+    var loc = gl.getAttribLocation(prog, 'p');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+    var uRes = gl.getUniformLocation(prog, 'uRes'),
+        uTime = gl.getUniformLocation(prog, 'uTime'),
+        uPtr = gl.getUniformLocation(prog, 'uPtr'),
+        uPas = gl.getUniformLocation(prog, 'uPas'),
+        uPos = gl.getUniformLocation(prog, 'uPos');
+
+    // Un téléphone ne rend pas au même prix qu'un écran de bureau.
+    var petit = window.matchMedia('(max-width: 900px)').matches;
+    var echelle = petit ? 0.72 : 1.0;
+    var dprMax = petit ? 1.0 : 1.5;
+    var pas = petit ? 52.0 : 76.0;
+    var imgParSec = petit ? 30 : 40;
+
+    var L = 0, H = 0;
+    function taille() {
+      var d = Math.min(window.devicePixelRatio || 1, dprMax) * echelle;
+      var w = Math.max(1, Math.round(toile.clientWidth * d));
+      var h = Math.max(1, Math.round(toile.clientHeight * d));
+      if (w !== L || h !== H) { L = w; H = h; toile.width = w; toile.height = h; gl.viewport(0, 0, w, h); }
+    }
+
+    // Paysage : la pièce se pose à droite, le titre garde un fond sombre.
+    // Portrait : elle monte au-dessus du texte.
+    function poser(){
+      var paysage = L / H > 1.05;
+      gl.uniform3f(uPos, paysage ? 2.26 : 0.05, paysage ? 0.52 : 0.30, 0.0);
+    }
+    var ptr = { x:0, y:0 }, ptrLisse = { x:0, y:0 };
+    if (!petit) {
+      window.addEventListener('pointermove', function (e) {
+        ptr.x = (e.clientX / window.innerWidth) * 2 - 1;
+        ptr.y = (e.clientY / window.innerHeight) * 2 - 1;
+      }, { passive:true });
+    }
+
+    var cote = document.getElementById('cote');
+    var visible = true, tourne = true, defile = false, tempoDefile = 0;
+    var t0 = performance.now(), dernier = 0, dernierCote = 0, dernierePeinture = 0, lents = 0;
+    window.addEventListener('scroll', function () {
+      if (!defile) defile = true;
+      clearTimeout(tempoDefile);
+      tempoDefile = setTimeout(function () {
+        defile = false;
+        if (visible && tourne) { t0 = performance.now() - temps*1000; requestAnimationFrame(boucle); }
+      }, 180);
+    }, { passive: true });
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) {
+        visible = es[0].isIntersecting;
+        if (visible && tourne && !defile) { t0 = performance.now() - temps*1000; requestAnimationFrame(boucle); }
+      }, { threshold: 0 }).observe(scene);
+    }
+    document.addEventListener('visibilitychange', function () {
+      tourne = !document.hidden;
+      if (tourne && visible) { t0 = performance.now() - temps*1000; requestAnimationFrame(boucle); }
+    });
+
+    var temps = 0;
+    function boucle(now) {
+      if (!visible || !tourne || defile) return;
+      if (now - dernier < 1000 / imgParSec - 1) { requestAnimationFrame(boucle); return; }
+      // Garde-fou : si l'appareil ne suit pas, on allège, puis on renonce.
+      if (dernierePeinture) {
+        var cout = now - dernierePeinture;
+        if (cout > 55) {
+          lents++;
+          if (lents === 12 && pas > 34) { pas = 34; imgParSec = 24; lents = 0; }
+          else if (lents > 26) {          // toujours trop lourd : image fixe
+            gl.uniform2f(uRes, L, H); gl.uniform1f(uTime, temps);
+            gl.uniform2f(uPtr, 0, 0); gl.uniform1f(uPas, 30.0); poser();
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            cote.textContent = (Math.sin(temps*0.50)*1.02*10 + 12.40).toFixed(2).replace('.', ',');
+            return;                        // la boucle s'arrête, la page respire
+          }
+        } else if (lents > 0) { lents--; }
+      }
+      dernierePeinture = now;
+      dernier = now;
+      taille();
+      temps = (now - t0) / 1000;
+      ptrLisse.x += (ptr.x - ptrLisse.x) * 0.055;
+      ptrLisse.y += (ptr.y - ptrLisse.y) * 0.055;
+      gl.uniform2f(uRes, L, H);
+      gl.uniform1f(uTime, temps);
+      gl.uniform2f(uPtr, ptrLisse.x, ptrLisse.y);
+      gl.uniform1f(uPas, pas);
+      poser();
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      // la cote relevée suit la hauteur réelle du plan de mesure
+      if (now - dernierCote > 90) {
+        dernierCote = now;
+        cote.textContent = (Math.sin(temps * 0.50) * 1.02 * 10.0 + 12.40).toFixed(2).replace('.', ',');
+      }
+      requestAnimationFrame(boucle);
+    }
+
+    taille();
+    if (doux.matches) {
+      // mouvement réduit : une seule image, nette, sans boucle
+      gl.uniform2f(uRes, L, H); gl.uniform1f(uTime, 1.9);
+      gl.uniform2f(uPtr, 0, 0); gl.uniform1f(uPas, pas);
+      poser();
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      cote.textContent = '21,99';
+    } else {
+      requestAnimationFrame(boucle);
+    }
+    window.addEventListener('resize', taille, { passive:true });
+    toile.classList.add('prete');
+    return true;
+  }
+
+  var ok = false;
+  try { ok = demarreScene(); } catch (e) { console.warn('Scène 3D indisponible :', e); }
+  if (!ok) { document.getElementById('cote').textContent = '—'; }
+  // le titre se lève, que la 3D ait démarré ou non
+  requestAnimationFrame(function () { scene.classList.add('prete'); });
 })();
 </script>
