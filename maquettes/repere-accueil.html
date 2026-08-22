@@ -1,0 +1,796 @@
+<title>Repère Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..600;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400..600&display=swap">
+
+<style>
+/* ==========================================================================
+   REPÈRE — maquette de la page d'accueil
+   Tokens conformes à docs/brief-studio.md §7. Couleurs en OKLCH uniquement.
+   Rayon 0 · aucune ombre portée · hiérarchie par le trait, le fond, l'espace.
+   ========================================================================== */
+
+/* --- 1. Tokens : jeu clair complet ------------------------------------- */
+:root{
+  --papier:       oklch(97.5% 0.008  85);
+  --papier-2:     oklch(94.5% 0.010  85);
+  --papier-3:     oklch(91.0% 0.012  85);
+  --encre:        oklch(21%   0.020 250);
+  --encre-2:      oklch(43%   0.015 250);
+  --encre-3:      oklch(62%   0.012 250);
+  --trait:        oklch(88%   0.008  85);
+  --trait-fort:   oklch(76%   0.012  85);
+  --signal:       oklch(58%   0.185  38);
+  --signal-fonce: oklch(48%   0.175  38);
+  --signal-doux:  oklch(94%   0.035  38);
+  --signal-survol:oklch(41%   0.165  36);
+  --sur-signal:   oklch(98%   0.006  85);
+  --ok:           oklch(48%   0.120 150);
+  --alerte:       oklch(52%   0.130  75);
+  --erreur:       oklch(50%   0.180  25);
+
+  --police-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --police-texte:   "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --police-mono:    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --e1:4px;  --e2:8px;  --e3:12px; --e4:16px; --e5:24px;
+  --e6:32px; --e7:48px; --e8:64px; --e9:96px; --e10:160px;
+
+  --largeur: 1320px;
+  --marge: clamp(20px, 4.5vw, 56px);
+  --sortie: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- 2. Tokens : jeu nuit (second thème, pas une inversion) ------------- */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --papier:       oklch(19%   0.015 255);
+    --papier-2:     oklch(23%   0.016 255);
+    --papier-3:     oklch(26.5% 0.017 255);
+    --encre:        oklch(94%   0.008  85);
+    --encre-2:      oklch(78%   0.011 250);
+    --encre-3:      oklch(63%   0.013 250);
+    --trait:        oklch(33%   0.015 255);
+    --trait-fort:   oklch(44%   0.017 255);
+    --signal:       oklch(71%   0.160  40);
+    --signal-fonce: oklch(71%   0.160  40);
+    --signal-doux:  oklch(30%   0.055  38);
+    --signal-survol:oklch(81%   0.135  42);
+    --sur-signal:   oklch(17%   0.015 255);
+    --ok:           oklch(74%   0.135 150);
+    --alerte:       oklch(78%   0.135  75);
+    --erreur:       oklch(71%   0.165  25);
+  }
+}
+:root[data-theme="dark"]{
+  --papier:       oklch(19%   0.015 255);
+  --papier-2:     oklch(23%   0.016 255);
+  --papier-3:     oklch(26.5% 0.017 255);
+  --encre:        oklch(94%   0.008  85);
+  --encre-2:      oklch(78%   0.011 250);
+  --encre-3:      oklch(63%   0.013 250);
+  --trait:        oklch(33%   0.015 255);
+  --trait-fort:   oklch(44%   0.017 255);
+  --signal:       oklch(71%   0.160  40);
+  --signal-fonce: oklch(71%   0.160  40);
+  --signal-doux:  oklch(30%   0.055  38);
+  --signal-survol:oklch(81%   0.135  42);
+  --sur-signal:   oklch(17%   0.015 255);
+  --ok:           oklch(74%   0.135 150);
+  --alerte:       oklch(78%   0.135  75);
+  --erreur:       oklch(71%   0.165  25);
+}
+
+/* --- 3. Base ------------------------------------------------------------ */
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--papier);
+  color:var(--encre);
+  font-family:var(--police-texte);
+  font-size:17px;
+  line-height:1.6;
+  font-synthesis-weight:none;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:var(--police-display);font-weight:600;margin:0;text-wrap:balance;line-height:1.04}
+h1{font-size:clamp(2.5rem,7.4vw,5.25rem);letter-spacing:-0.035em}
+h2{font-size:clamp(1.75rem,3.6vw,2.75rem);letter-spacing:-0.035em}
+h3{font-size:1.125rem;letter-spacing:-0.01em;line-height:1.25}
+p{margin:0}
+a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
+ul,ol{margin:0;padding:0;list-style:none}
+:focus-visible{outline:2px solid var(--signal-fonce);outline-offset:3px}
+::selection{background:var(--signal-doux);color:var(--encre)}
+
+.mono{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.nb{font-family:var(--police-mono);font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.prose{max-width:65ch}
+
+.etiquette{
+  font-family:var(--police-mono);font-size:.6875rem;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--encre-2);
+}
+
+/* --- 4. La grille : 13 filets fixés, alignés sur 12 colonnes ------------ */
+.filets{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  max-width:var(--largeur);margin-inline:auto;
+  padding-inline:var(--marge);
+  display:grid;grid-template-columns:repeat(12,1fr);
+}
+.filets i{border-left:1px solid var(--trait);transform-origin:top center}
+.filets i:last-child{border-right:1px solid var(--trait)}
+@media (prefers-reduced-motion: no-preference){
+  .filets i{transform:scaleY(0);animation:trace .95s var(--sortie) forwards;animation-delay:calc(var(--i) * 45ms)}
+}
+@keyframes trace{to{transform:scaleY(1)}}
+
+.enveloppe{
+  position:relative;z-index:1;
+  max-width:var(--largeur);margin-inline:auto;
+  padding-inline:var(--marge);
+}
+
+/* --- 5. Rythme des sections -------------------------------------------- */
+.section{border-top:1px solid var(--trait);padding-block:clamp(56px,10vw,var(--e10))}
+.section:first-of-type{border-top:0}
+.tete-section{display:flex;flex-wrap:wrap;gap:var(--e4) var(--e6);align-items:baseline;justify-content:space-between;margin-bottom:var(--e7)}
+.tete-section p{max-width:52ch;color:var(--encre-2)}
+
+@supports (animation-timeline: view()){
+  @media (prefers-reduced-motion: no-preference){
+    .revele{animation:apparait linear both;animation-timeline:view();animation-range:entry 4% cover 20%}
+  }
+}
+@keyframes apparait{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+/* --- 6. Bandeau maquette ----------------------------------------------- */
+.bandeau{
+  position:relative;z-index:3;background:var(--signal-doux);
+  border-bottom:1px solid var(--trait);
+  font-family:var(--police-mono);font-size:.75rem;color:var(--encre);
+}
+.bandeau .enveloppe{display:flex;gap:var(--e3);align-items:center;padding-block:var(--e2);flex-wrap:wrap}
+.bandeau b{color:var(--signal-fonce);font-weight:600}
+
+/* --- 7. En-tête --------------------------------------------------------- */
+.evitement{
+  position:absolute;left:var(--e4);top:var(--e2);z-index:9;
+  transform:translateY(-200%);background:var(--encre);color:var(--papier);
+  padding:var(--e2) var(--e4);font-size:.875rem;text-decoration:none;
+  transition:transform .15s var(--sortie);
+}
+.evitement:focus{transform:translateY(0)}
+
+.entete{
+  position:sticky;top:0;z-index:5;
+  background:var(--papier);border-bottom:1px solid var(--trait);
+}
+.entete .enveloppe{display:flex;align-items:center;gap:var(--e5);min-height:68px}
+.marque{
+  font-family:var(--police-display);font-weight:700;font-size:1.375rem;
+  letter-spacing:-0.03em;text-decoration:none;display:flex;align-items:center;gap:var(--e2);
+}
+.marque span{width:9px;height:9px;background:var(--signal);flex:none}
+.nav{display:flex;gap:var(--e5);margin-left:auto;font-size:.9375rem}
+.nav a{text-decoration:none;color:var(--encre-2);transition:color .15s var(--sortie)}
+.nav a:hover{color:var(--encre)}
+.outils{display:flex;align-items:center;gap:var(--e2);margin-left:var(--e5)}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--e2);
+  min-height:44px;padding:0 var(--e5);border:1px solid var(--encre);
+  background:none;color:var(--encre);font:inherit;font-size:.9375rem;font-weight:500;
+  border-radius:0;text-decoration:none;cursor:pointer;
+  transition:background .15s var(--sortie),color .15s var(--sortie),border-color .15s var(--sortie);
+}
+.btn:hover{background:var(--encre);color:var(--papier)}
+.btn-signal{background:var(--signal-fonce);border-color:var(--signal-fonce);color:var(--sur-signal)}
+.btn-signal:hover{background:var(--signal-survol);border-color:var(--signal-survol);color:var(--sur-signal)}
+.btn-min{min-height:40px;padding:0 var(--e4);font-size:.875rem;border-color:var(--trait-fort)}
+
+.bascule{
+  width:44px;height:44px;border:1px solid var(--trait-fort);background:none;color:var(--encre-2);
+  display:grid;place-items:center;cursor:pointer;font-family:var(--police-mono);font-size:1rem;
+  transition:color .15s var(--sortie),border-color .15s var(--sortie);
+}
+.bascule:hover{color:var(--encre);border-color:var(--encre)}
+.bascule[data-carre]::before{
+  content:"";width:14px;height:14px;border:1px solid currentColor;
+  background:linear-gradient(90deg,currentColor 0 50%,transparent 50% 100%);
+}
+.burger{display:none}
+
+/* --- 8. Héros ----------------------------------------------------------- */
+.heros{padding-block:clamp(56px,9vw,120px) clamp(48px,7vw,104px)}
+.heros-grille{display:grid;grid-template-columns:1fr;gap:var(--e8)}
+@media (min-width:1040px){
+  .heros-grille{grid-template-columns:repeat(12,1fr);gap:0;align-items:start}
+  .heros-grille > :first-child{grid-column:1 / span 7;padding-right:var(--e7)}
+  .heros-grille > .cartouche{grid-column:9 / span 4}
+}
+.heros h1{margin-bottom:var(--e5)}
+.heros h1 em{font-style:normal;color:var(--signal)}
+.chapo{font-size:clamp(1.0625rem,1.9vw,1.3125rem);color:var(--encre-2);max-width:44ch;line-height:1.5}
+.actions{display:flex;flex-wrap:wrap;gap:var(--e3);margin-top:var(--e7)}
+.actions .btn{min-height:52px;padding:0 var(--e6);font-size:1rem}
+.appui{margin-top:var(--e5);font-size:.875rem;color:var(--encre-2)}
+
+/* --- 9. Cartouche de mesures ------------------------------------------- */
+.cartouche{border:1px solid var(--trait-fort);background:var(--papier-2)}
+.cartouche-tete{
+  display:flex;justify-content:space-between;align-items:center;gap:var(--e3);
+  padding:var(--e3) var(--e4);border-bottom:1px solid var(--trait-fort);
+}
+.pastille{
+  font-family:var(--police-mono);font-size:.625rem;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid var(--signal-fonce);color:var(--signal-fonce);padding:2px var(--e2);
+}
+.mesures{display:grid;grid-template-columns:1fr 1fr}
+.mesure{padding:var(--e5) var(--e4);border-bottom:1px solid var(--trait);border-right:1px solid var(--trait)}
+.mesure:nth-child(2n){border-right:0}
+.mesure:nth-last-child(-n+2){border-bottom:0}
+.mesure dt{font-family:var(--police-mono);font-size:.6875rem;letter-spacing:.1em;text-transform:uppercase;color:var(--encre-2);margin-bottom:var(--e2)}
+.mesure dd{margin:0;font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:clamp(1.75rem,4.4vw,2.25rem);font-weight:500;letter-spacing:-0.03em;line-height:1}
+.mesure dd small{font-size:.9375rem;font-weight:400;color:var(--encre-2);letter-spacing:0}
+.cartouche-pied{padding:var(--e3) var(--e4);border-top:1px solid var(--trait-fort);font-family:var(--police-mono);font-size:.6875rem;color:var(--encre-2)}
+
+/* --- 10. Table des engagements ----------------------------------------- */
+.table-enveloppe{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:560px}
+caption{text-align:left;color:var(--encre-2);font-size:.9375rem;margin-bottom:var(--e4)}
+th,td{text-align:left;padding:var(--e4) var(--e4) var(--e4) 0;border-bottom:1px solid var(--trait);vertical-align:baseline}
+thead th{
+  font-family:var(--police-mono);font-size:.6875rem;font-weight:500;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--encre-2);padding-bottom:var(--e3);border-bottom-color:var(--trait-fort);
+}
+tbody th{font-weight:500;font-size:1rem}
+td.seuil{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:1.0625rem;white-space:nowrap}
+td.methode{color:var(--encre-2);font-size:.9375rem}
+
+/* --- 11. Audit ---------------------------------------------------------- */
+.audit{background:var(--papier-2);border-top:1px solid var(--trait-fort);border-bottom:1px solid var(--trait-fort)}
+.audit-grille{display:grid;grid-template-columns:1fr;gap:var(--e8)}
+@media (min-width:1040px){
+  .audit-grille{grid-template-columns:repeat(12,1fr);gap:0;align-items:start}
+  .audit-grille > :first-child{grid-column:1 / span 5;padding-right:var(--e7)}
+  .audit-grille > .resultats{grid-column:7 / span 6}
+}
+.formulaire{display:flex;flex-direction:column;gap:var(--e3);margin-top:var(--e6);max-width:34rem}
+.formulaire label{font-family:var(--police-mono);font-size:.6875rem;letter-spacing:.12em;text-transform:uppercase;color:var(--encre-2)}
+.saisie{display:flex;flex-wrap:wrap;gap:var(--e2)}
+.formulaire input{
+  flex:1 1 15rem;min-height:52px;padding:0 var(--e4);
+  border:1px solid var(--trait-fort);border-radius:2px;
+  background:var(--papier);color:var(--encre);
+  font-family:var(--police-mono);font-size:1rem;
+}
+.formulaire input:focus-visible{border-color:var(--signal-fonce);outline-offset:1px}
+.formulaire .btn{min-height:52px;flex:0 0 auto}
+.aide{font-size:.8125rem;color:var(--encre-2);max-width:44ch}
+
+.resultats{border:1px solid var(--trait-fort);background:var(--papier);min-height:340px;display:flex;flex-direction:column}
+.resultats-tete{display:flex;justify-content:space-between;align-items:center;gap:var(--e3);flex-wrap:wrap;padding:var(--e3) var(--e4);border-bottom:1px solid var(--trait-fort)}
+.resultats-tete strong{font-family:var(--police-mono);font-size:.8125rem;font-weight:500;word-break:break-all}
+.vide{margin:auto;padding:var(--e7) var(--e5);text-align:center;color:var(--encre-2);font-size:.9375rem;max-width:34ch}
+.bloc{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--e4);padding:var(--e4);border-bottom:1px solid var(--trait)}
+.bloc:last-child{border-bottom:0}
+.bloc-nom{font-size:.9375rem;font-weight:500}
+.bloc-detail{font-size:.8125rem;color:var(--encre-2);margin-top:2px;max-width:38ch}
+.note{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:1.5rem;font-weight:500;letter-spacing:-0.03em;white-space:nowrap;line-height:1.1}
+.note[data-etat="ok"]{color:var(--ok)}
+.note[data-etat="alerte"]{color:var(--alerte)}
+.note[data-etat="erreur"]{color:var(--erreur)}
+.note[data-etat="attente"]{color:var(--encre-2);font-size:.8125rem;letter-spacing:.08em;text-transform:uppercase}
+@media (prefers-reduced-motion: no-preference){
+  .bloc[data-neuf]{animation:arrive .5s var(--sortie) both}
+}
+@keyframes arrive{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.limites{margin-top:var(--e5);padding-top:var(--e4);border-top:1px solid var(--trait);font-size:.8125rem;color:var(--encre-2)}
+.limites li{padding-left:var(--e4);position:relative;margin-bottom:var(--e2)}
+.limites li::before{content:"—";position:absolute;left:0;color:var(--signal)}
+
+/* --- 12. Méthode -------------------------------------------------------- */
+.phases{display:grid;grid-template-columns:1fr;border-top:1px solid var(--trait-fort)}
+@media (min-width:680px){.phases{grid-template-columns:1fr 1fr}}
+@media (min-width:1040px){.phases{grid-template-columns:repeat(3,1fr)}}
+.phase{padding:var(--e5) var(--e5) var(--e6) 0;border-bottom:1px solid var(--trait);display:flex;gap:var(--e4)}
+@media (min-width:680px){.phase{padding-right:var(--e6)}}
+.phase-num{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:.8125rem;color:var(--signal-fonce);flex:none;padding-top:3px}
+.phase h3{margin-bottom:var(--e2)}
+.phase p{font-size:.9375rem;color:var(--encre-2)}
+
+/* --- 13. Offres --------------------------------------------------------- */
+.offre{
+  display:grid;grid-template-columns:1fr;gap:var(--e2) var(--e6);
+  padding-block:var(--e6);border-bottom:1px solid var(--trait);
+}
+.offre:first-of-type{border-top:1px solid var(--trait-fort)}
+@media (min-width:860px){
+  .offre{grid-template-columns:repeat(12,1fr);gap:0;align-items:baseline}
+  .offre h3{grid-column:1 / span 3;padding-right:var(--e5)}
+  .offre p:not(.prix){grid-column:5 / span 4;padding-right:var(--e5)}
+  .offre .prix{grid-column:10 / span 3}
+}
+.offre h3{font-size:1.375rem;letter-spacing:-0.02em}
+.offre p{color:var(--encre-2);font-size:.9375rem}
+.offre .prix{
+  font-family:var(--police-mono);font-variant-numeric:tabular-nums;
+  font-size:1rem;
+}
+.offre .prix small{display:block;font-size:.75rem;color:var(--encre-2);margin-top:var(--e1)}
+.offre:hover h3{color:var(--signal-fonce);transition:color .15s var(--sortie)}
+
+/* --- 14. Carnet --------------------------------------------------------- */
+.carnet{display:grid;grid-template-columns:1fr;border-top:1px solid var(--trait-fort)}
+@media (min-width:860px){.carnet{grid-template-columns:repeat(3,1fr)}}
+.entree{padding:var(--e5) var(--e6) var(--e6) 0;border-bottom:1px solid var(--trait)}
+.entree time{font-family:var(--police-mono);font-variant-numeric:tabular-nums;font-size:.75rem;color:var(--encre-2);display:block;margin-bottom:var(--e3)}
+.entree h3{margin-bottom:var(--e2)}
+.entree p{font-size:.9375rem;color:var(--encre-2)}
+
+/* --- 15. Studio + clôture ----------------------------------------------- */
+.studio-grille{display:grid;grid-template-columns:1fr;gap:var(--e7)}
+@media (min-width:1040px){
+  .studio-grille{grid-template-columns:repeat(12,1fr);gap:0}
+  .studio-grille > :first-child{grid-column:1 / span 5;padding-right:var(--e7)}
+  .studio-grille > .fiche{grid-column:7 / span 6}
+}
+.studio-grille p + p{margin-top:var(--e4)}
+.fiche{border:1px solid var(--trait-fort);align-self:start}
+.fiche div{display:flex;justify-content:space-between;gap:var(--e4);padding:var(--e3) var(--e4);border-bottom:1px solid var(--trait);font-size:.875rem}
+.fiche div:last-child{border-bottom:0}
+.fiche dt{color:var(--encre-2)}
+.fiche dd{margin:0;font-family:var(--police-mono);font-variant-numeric:tabular-nums;text-align:right}
+
+.cloture{text-align:left;padding-block:clamp(64px,11vw,168px)}
+.cloture h2{max-width:18ch;margin-bottom:var(--e5)}
+.cloture p{color:var(--encre-2);max-width:52ch}
+
+/* --- 16. Pied ----------------------------------------------------------- */
+.pied{border-top:1px solid var(--trait-fort);padding-block:var(--e8) var(--e6);font-size:.875rem}
+.pied-grille{display:grid;grid-template-columns:1fr;gap:var(--e7)}
+@media (min-width:760px){
+  .pied-grille{grid-template-columns:repeat(12,1fr);gap:0}
+  .pied-grille > :nth-child(1){grid-column:1 / span 4;padding-right:var(--e6)}
+  .pied-grille > :nth-child(2){grid-column:5 / span 3}
+  .pied-grille > :nth-child(3){grid-column:8 / span 3}
+  .pied-grille > :nth-child(4){grid-column:11 / span 2}
+}
+.pied .titre-colonne{font-family:var(--police-mono);font-size:.6875rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--encre-2);margin:0 0 var(--e4);line-height:1.4}
+.pied li{margin-bottom:var(--e2)}
+.pied a{color:var(--encre-2);text-decoration:none;transition:color .15s var(--sortie)}
+.pied a:hover{color:var(--encre);text-decoration:underline}
+.mentions{display:flex;flex-wrap:wrap;gap:var(--e2) var(--e5);justify-content:space-between;margin-top:var(--e8);padding-top:var(--e4);border-top:1px solid var(--trait);color:var(--encre-2);font-family:var(--police-mono);font-size:.75rem}
+
+/* --- 17. Adaptations petites largeurs ----------------------------------- */
+@media (max-width:900px){
+  .nav{
+    display:none;position:absolute;top:100%;left:0;right:0;
+    flex-direction:column;gap:0;background:var(--papier);
+    border-bottom:1px solid var(--trait-fort);padding:var(--e2) var(--marge) var(--e5);
+  }
+  .nav[data-ouvert="true"]{display:flex}
+  .nav a{padding:var(--e3) 0;border-bottom:1px solid var(--trait);font-size:1.0625rem}
+  .entete .enveloppe{position:relative}
+  .outils{margin-left:auto}
+  .burger{display:grid}
+  .entete .btn-signal{display:none}
+}
+@media (max-width:520px){
+  .actions{flex-direction:column;align-items:stretch}
+  .actions .btn{width:100%}
+  .formulaire .btn{width:100%}
+}
+@media (max-width:767px){
+  .filets{grid-template-columns:repeat(4,1fr)}
+  .filets i:nth-child(n+5){display:none}
+  .filets i:nth-child(4){border-right:1px solid var(--trait)}
+  .mesures{grid-template-columns:1fr}
+  .mesure{border-right:0}
+  .mesure:nth-last-child(-n+2){border-bottom:1px solid var(--trait)}
+  .mesure:last-child{border-bottom:0}
+}
+</style>
+
+<a class="evitement" href="#contenu">Aller au contenu</a>
+
+<div class="filets" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i><i style="--i:9"></i><i style="--i:10"></i><i style="--i:11"></i></div>
+
+<aside class="bandeau" aria-label="Statut de cette page">
+  <div class="enveloppe">
+    <b>Maquette</b>
+    <span>Page d’accueil seule. Les valeurs marquées « exemple » ne sont pas mesurées.</span>
+  </div>
+</aside>
+
+<header class="entete">
+  <div class="enveloppe">
+    <a class="marque" href="#"><span aria-hidden="true"></span>Repère</a>
+    <nav class="nav" id="nav" aria-label="Navigation principale">
+      <a href="#methode">Méthode</a>
+      <a href="#offres">Offres</a>
+      <a href="#audit">Audit</a>
+      <a href="#carnet">Carnet</a>
+      <a href="#studio">Studio</a>
+    </nav>
+    <div class="outils">
+      <button class="bascule burger" id="burger" type="button" aria-expanded="false" aria-controls="nav" aria-label="Ouvrir la navigation">≡</button>
+      <button class="bascule" id="theme" type="button" data-carre aria-label="Basculer le thème clair ou sombre" title="Thème clair ou sombre"></button>
+      <a class="btn btn-signal btn-min" href="#audit">Auditer mon site</a>
+    </div>
+  </div>
+</header>
+
+<main id="contenu">
+
+  <!-- ===== Héros ===== -->
+  <section class="heros">
+    <div class="enveloppe heros-grille">
+      <div>
+        <p class="etiquette" style="margin-bottom:var(--e5)">Studio de développement · Nice</p>
+        <h1>Des sites qu’on peut <em>mesurer</em>.</h1>
+        <p class="chapo">Performance, accessibilité et sécurité vérifiées à la livraison — et tous les mois qui suivent.</p>
+        <div class="actions">
+          <a class="btn btn-signal" href="#audit">Auditer mon site</a>
+          <a class="btn" href="#cloture">Prendre 20 minutes</a>
+        </div>
+        <p class="appui">Analyse passive, gratuite, sans formulaire. Résultat affiché intégralement à l’écran.</p>
+      </div>
+
+      <div class="cartouche">
+        <div class="cartouche-tete">
+          <span class="etiquette">Ce site, mesuré</span>
+          <span class="pastille">Exemple</span>
+        </div>
+        <dl class="mesures">
+          <div class="mesure"><dt>Lighthouse mobile</dt><dd>98<small> / 100</small></dd></div>
+          <div class="mesure"><dt>LCP</dt><dd>0,9<small> s</small></dd></div>
+          <div class="mesure"><dt>En-têtes</dt><dd>A+</dd></div>
+          <div class="mesure"><dt>Violations axe-core</dt><dd>0</dd></div>
+        </dl>
+        <p class="cartouche-pied">Mesuré automatiquement chaque nuit · dernière exécution le 22.08.2026 à 03:12 UTC</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Engagements ===== -->
+  <section class="section revele" id="engagements">
+    <div class="enveloppe">
+      <div class="tete-section">
+        <h2>Ce sur quoi je m’engage par écrit</h2>
+        <p>Cinq seuils, vérifiables par n’importe qui avec un navigateur. S’ils ne sont pas tenus à la livraison, ce n’est pas livré.</p>
+      </div>
+      <div class="table-enveloppe" tabindex="0" role="region" aria-label="Seuils contractuels">
+        <table>
+          <caption>Seuils contractuels, mesurés sur les pages publiques du site livré.</caption>
+          <thead>
+            <tr><th scope="col">Engagement</th><th scope="col">Seuil</th><th scope="col">Comment c’est vérifié</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Performance</th><td class="seuil">Lighthouse ≥ 95</td><td class="methode">Lighthouse mobile, profil par défaut, exécuté en intégration continue</td></tr>
+            <tr><th scope="row">Vitesse d’affichage</th><td class="seuil">LCP &lt; 1,5 s</td><td class="methode">Mesure de laboratoire, réseau bridé, plus données de terrain CrUX si le trafic le permet</td></tr>
+            <tr><th scope="row">Accessibilité</th><td class="seuil">0 violation critique</td><td class="methode">axe-core sur chaque page, WCAG 2.2 AA, plus un parcours clavier complet</td></tr>
+            <tr><th scope="row">Sécurité</th><td class="seuil">Note A+</td><td class="methode">securityheaders.com, capture d’écran jointe au procès-verbal de recette</td></tr>
+            <tr><th scope="row">Réactivité</th><td class="seuil">4 h ouvrées</td><td class="methode">Délai de première réponse, contrats d’infogérance</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Audit ===== -->
+  <section class="section audit" id="audit">
+    <div class="enveloppe audit-grille">
+      <div>
+        <p class="etiquette" style="margin-bottom:var(--e4)">Outil public</p>
+        <h2>Testez votre site maintenant</h2>
+        <p class="prose" style="margin-top:var(--e4);color:var(--encre-2)">
+          Vous entrez une adresse, vous obtenez un diagnostic. Pas de formulaire avant le résultat,
+          pas de score partiel gardé en otage : tout s’affiche à l’écran, au fur et à mesure que
+          chaque contrôle rend sa réponse.
+        </p>
+
+        <form class="formulaire" id="formulaire" novalidate>
+          <label for="url">Adresse du site à analyser</label>
+          <div class="saisie">
+            <input id="url" name="url" type="text" inputmode="url" autocomplete="url" value="exemple.fr" spellcheck="false">
+            <button class="btn btn-signal" type="submit">Lancer l’analyse</button>
+          </div>
+          <p class="aide" id="aide">Analyse passive, à partir d’informations publiquement accessibles.</p>
+        </form>
+
+        <ul class="limites">
+          <li>Lecture des en-têtes HTTP publics, du DNS public et des API publiques de Google.</li>
+          <li>Aucun scan de ports, aucun test d’injection, aucun accès à un chemin non public.</li>
+          <li>Limitation de débit par adresse IP et par domaine cible.</li>
+        </ul>
+      </div>
+
+      <div class="resultats" id="resultats">
+        <div class="resultats-tete">
+          <strong id="cible">Aucune analyse en cours</strong>
+          <span class="pastille">Exemple de rendu</span>
+        </div>
+        <div id="blocs" aria-live="polite" aria-busy="false">
+          <p class="vide">Les résultats apparaissent ici, bloc par bloc. Dans cette maquette, les valeurs sont fixes et aucune requête réseau n’est émise.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Méthode ===== -->
+  <section class="section revele" id="methode">
+    <div class="enveloppe">
+      <div class="tete-section">
+        <h2>La méthode, en neuf phases</h2>
+        <p>Chaque phase a un livrable daté et une chose attendue de vous. Vous suivez l’avancement en direct depuis votre espace, sans avoir à le demander.</p>
+      </div>
+      <ol class="phases">
+        <li class="phase"><span class="phase-num">01</span><div><h3>Cadrage et architecture</h3><p>Atelier, arborescence, périmètre écrit. Ce qui est dedans, ce qui est dehors.</p></div></li>
+        <li class="phase"><span class="phase-num">02</span><div><h3>Direction artistique</h3><p>Tokens, typographie, grille. Deux gabarits maquettés, pas quinze.</p></div></li>
+        <li class="phase"><span class="phase-num">03</span><div><h3>Contenus et rédaction</h3><p>Textes réels dès le départ. Aucune maquette validée sur du faux texte.</p></div></li>
+        <li class="phase"><span class="phase-num">04</span><div><h3>Intégration</h3><p>HTML sémantique, zéro JavaScript sur les pages sans interaction réelle.</p></div></li>
+        <li class="phase"><span class="phase-num">05</span><div><h3>Développement</h3><p>Fonctions métier, connecteurs, back-office. Tests écrits en même temps.</p></div></li>
+        <li class="phase"><span class="phase-num">06</span><div><h3>Accessibilité et performance</h3><p>axe-core, parcours clavier, lecteur d’écran, budget de poids appliqué au build.</p></div></li>
+        <li class="phase"><span class="phase-num">07</span><div><h3>Sécurité et durcissement</h3><p>CSP, en-têtes, TLS, dépendances, secrets. Rapport avant et après.</p></div></li>
+        <li class="phase"><span class="phase-num">08</span><div><h3>Recette et mise en ligne</h3><p>Procès-verbal chiffré, transfert des accès, documentation d’exploitation.</p></div></li>
+        <li class="phase"><span class="phase-num">09</span><div><h3>Exploitation</h3><p>Supervision, sauvegardes testées, mises à jour, rapport mensuel.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== Offres ===== -->
+  <section class="section revele" id="offres">
+    <div class="enveloppe">
+      <div class="tete-section">
+        <h2>Cinq façons de travailler ensemble</h2>
+        <p>Les prix sont affichés parce qu’un prix caché fait perdre du temps à tout le monde.</p>
+      </div>
+
+      <article class="offre">
+        <h3>Sites institutionnels sur-mesure</h3>
+        <p>Codés à la main, sans thème ni constructeur de pages. Performance, WCAG 2.2 AA, sécurité, SEO technique. Institutions, cabinets, PME établies, secteur public.</p>
+        <p class="prix">à partir de 3 800 €<small>engagement de seuils inclus</small></p>
+      </article>
+
+      <article class="offre">
+        <h3>Applications métier et portails</h3>
+        <p>Catalogue connecté à un logiciel métier, back-office sur-mesure, connecteurs, tableaux de bord. On se branche aux systèmes existants, on ne les remplace pas.</p>
+        <p class="prix">à partir de 8 000 €<small>chiffrage après cadrage</small></p>
+      </article>
+
+      <article class="offre">
+        <h3>Automatisation et intégration</h3>
+        <p>Connecter des outils qui ne se parlent pas, supprimer les ressaisies. Flux XML et API, synchronisations, notifications, rapports automatiques.</p>
+        <p class="prix">au forfait ou en jours<small>selon le périmètre</small></p>
+      </article>
+
+      <article class="offre">
+        <h3>Audit et durcissement sécurité</h3>
+        <p>Surface exposée, en-têtes HTTP, TLS, DNS, SPF, DKIM, DMARC, dépendances, fichiers accessibles. Rapport priorisé et plan de remédiation. Mise en conformité RGPD technique.</p>
+        <p class="prix">à partir de 550 €<small>rapport sous 5 jours ouvrés</small></p>
+      </article>
+
+      <article class="offre">
+        <h3>Infogérance et exploitation</h3>
+        <p>Hébergement, supervision, sauvegardes testées, mises à jour, rapport mensuel, engagement de réponse contractuel.</p>
+        <p class="prix">49 / 129 / 390 € par mois<small>trois niveaux</small></p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== Carnet ===== -->
+  <section class="section revele" id="carnet">
+    <div class="enveloppe">
+      <div class="tete-section">
+        <h2>Carnet de bord</h2>
+        <p>Ce qui est expédié, daté. <span class="pastille">Exemple</span></p>
+      </div>
+      <div class="carnet">
+        <article class="entree">
+          <time datetime="2026-08-19">19 août 2026</time>
+          <h3>Budget de poids bloquant en intégration continue</h3>
+          <p>Le build échoue désormais au-delà de 28 ko de CSS et 90 ko de JavaScript compressés. Trois pages étaient déjà au-dessus.</p>
+        </article>
+        <article class="entree">
+          <time datetime="2026-08-12">12 août 2026</time>
+          <h3>Polices : métriques de repli mesurées</h3>
+          <p>Ajustement de <span class="mono">size-adjust</span> et <span class="mono">ascent-override</span> sur les trois familles. Décalage cumulé ramené à 0,000.</p>
+        </article>
+        <article class="entree">
+          <time datetime="2026-08-05">5 août 2026</time>
+          <h3>Politique de sécurité de contenu en observation</h3>
+          <p>CSP passée en <span class="mono">report-only</span> sur l’ensemble du site pendant sept jours avant durcissement. Deux violations relevées, corrigées.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Studio ===== -->
+  <section class="section revele" id="studio">
+    <div class="enveloppe studio-grille">
+      <div>
+        <div class="tete-section" style="margin-bottom:var(--e5)"><h2>Le studio</h2></div>
+        <div class="prose" style="color:var(--encre-2)">
+          <p>Repère est un studio de développement basé à Nice, fondé par Rafael. Il construit des sites institutionnels et des outils métier, et il en publie les mesures.</p>
+          <p>Le parcours est technique : informatique et sécurité, CompTIA Security+, BUT Informatique en alternance en cours. Venir de la sécurité plutôt que du graphisme change la manière de construire — on commence par ce qui est vérifiable, l’apparence suit.</p>
+          <p>Pas de références publiables pour l’instant, et pas de faux projets pour combler le vide. Ce que vous pouvez juger : ce site, ses en-têtes, son code source, et l’outil d’audit ci-dessus appliqué au site de votre choix.</p>
+        </div>
+      </div>
+      <dl class="fiche">
+        <div><dt>Base</dt><dd>Nice, Côte d’Azur</dd></div>
+        <div><dt>Interlocuteur</dt><dd>direct, une personne</dd></div>
+        <div><dt>Première réponse</dt><dd>4 h ouvrées</dd></div>
+        <div><dt>Ce qu’on ne fait pas</dt><dd>sites à 500 €</dd></div>
+        <div><dt>Ce qu’on ne promet pas</dt><dd>une position Google</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===== Clôture ===== -->
+  <section class="section cloture" id="cloture">
+    <div class="enveloppe">
+      <h2>Vingt minutes suffisent pour savoir si c’est pertinent.</h2>
+      <p>Vous décrivez le besoin, je dis ce que ça coûte et ce que ça ne résout pas. S’il n’y a pas de projet, on se le dit à la fin de l’appel.</p>
+      <div class="actions">
+        <a class="btn btn-signal" href="#">Prendre 20 minutes</a>
+        <a class="btn" href="#audit">Commencer par un audit</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pied">
+  <div class="enveloppe">
+    <div class="pied-grille">
+      <div>
+        <a class="marque" href="#" style="margin-bottom:var(--e4)"><span aria-hidden="true"></span>Repère</a>
+        <p style="color:var(--encre-2);max-width:30ch">Sites institutionnels, applications métier et sécurité. Nice, Côte d’Azur.</p>
+      </div>
+      <div><h2 class="titre-colonne">Offres</h2><ul><li><a href="#offres">Sites institutionnels</a></li><li><a href="#offres">Applications métier</a></li><li><a href="#offres">Audit sécurité</a></li><li><a href="#offres">Infogérance</a></li></ul></div>
+      <div><h2 class="titre-colonne">Studio</h2><ul><li><a href="#methode">La méthode</a></li><li><a href="#carnet">Carnet de bord</a></li><li><a href="#studio">Qui je suis</a></li><li><a href="#cloture">Contact</a></li></ul></div>
+      <div><h2 class="titre-colonne">Légal</h2><ul><li><a href="#">Mentions légales</a></li><li><a href="#">Confidentialité</a></li><li><a href="#">Accessibilité</a></li><li><a href="#">Espace client</a></li></ul></div>
+    </div>
+    <div class="mentions">
+      <span>© 2026 Repère · repere.fr</span>
+      <span>Aucun cookie, aucun domaine tiers</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* --- Thème : choix explicite, sinon celui du système ------------------ */
+  var racine = document.documentElement;
+  if (racine.lang !== 'fr') racine.lang = 'fr';
+  var boutonTheme = document.getElementById('theme');
+  try {
+    var memo = localStorage.getItem('repere-theme');
+    if (memo === 'dark' || memo === 'light') racine.setAttribute('data-theme', memo);
+  } catch (e) { /* stockage indisponible : on garde le thème du système */ }
+
+  boutonTheme.addEventListener('click', function () {
+    var sombreSysteme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var actuel = racine.getAttribute('data-theme') || (sombreSysteme ? 'dark' : 'light');
+    var suivant = actuel === 'dark' ? 'light' : 'dark';
+    racine.setAttribute('data-theme', suivant);
+    try { localStorage.setItem('repere-theme', suivant); } catch (e) {}
+  });
+
+  /* --- Navigation repliée sur petite largeur --------------------------- */
+  var burger = document.getElementById('burger');
+  var nav = document.getElementById('nav');
+  burger.addEventListener('click', function () {
+    var ouvert = nav.getAttribute('data-ouvert') === 'true';
+    nav.setAttribute('data-ouvert', String(!ouvert));
+    burger.setAttribute('aria-expanded', String(!ouvert));
+    burger.setAttribute('aria-label', ouvert ? 'Ouvrir la navigation' : 'Fermer la navigation');
+  });
+  nav.addEventListener('click', function (ev) {
+    if (ev.target.tagName === 'A') {
+      nav.setAttribute('data-ouvert', 'false');
+      burger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  /* --- Démonstration de l'arrivée progressive des blocs d'audit --------
+     Aucune requête réseau : cette maquette illustre la séquence d'affichage,
+     pas la mesure. Les valeurs sont figées.                               */
+  var EXEMPLES = [
+    { nom: 'En-têtes de sécurité', detail: 'CSP absente · HSTS présent · Referrer-Policy absente', note: 'C', etat: 'alerte', delai: 400 },
+    { nom: 'Messagerie du domaine', detail: 'SPF valide · DMARC en p=none · DKIM trouvé sur le sélecteur google', note: 'B', etat: 'alerte', delai: 900 },
+    { nom: 'Référencement technique', detail: 'title, description et canonique présents · sitemap.xml introuvable', note: 'B+', etat: 'ok', delai: 1500 },
+    { nom: 'Poids de la page', detail: '1,8 Mo au premier chargement · 7 domaines tiers contactés', note: 'D', etat: 'erreur', delai: 2100 },
+    { nom: 'Performance mobile', detail: 'PageSpeed Insights · LCP 4,1 s · INP 240 ms', note: '41', etat: 'erreur', delai: 4200 }
+  ];
+
+  var formulaire = document.getElementById('formulaire');
+  var champ = document.getElementById('url');
+  var cible = document.getElementById('cible');
+  var blocs = document.getElementById('blocs');
+  var minuteurs = [];
+  var reduit = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function nettoieDomaine(valeur) {
+    var v = String(valeur).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(v) ? v : null;
+  }
+
+  function ligne(item) {
+    var el = document.createElement('div');
+    el.className = 'bloc';
+    el.setAttribute('data-neuf', '');
+
+    var gauche = document.createElement('div');
+    var nom = document.createElement('p');
+    nom.className = 'bloc-nom';
+    nom.textContent = item.nom;
+    var detail = document.createElement('p');
+    detail.className = 'bloc-detail';
+    detail.textContent = item.detail;
+    gauche.appendChild(nom);
+    gauche.appendChild(detail);
+
+    var note = document.createElement('span');
+    note.className = 'note';
+    note.setAttribute('data-etat', item.etat);
+    note.textContent = item.note;
+
+    el.appendChild(gauche);
+    el.appendChild(note);
+    return el;
+  }
+
+  formulaire.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    minuteurs.forEach(clearTimeout);
+    minuteurs = [];
+
+    var domaine = nettoieDomaine(champ.value);
+    if (!domaine) {
+      blocs.innerHTML = '';
+      var err = document.createElement('p');
+      err.className = 'vide';
+      err.textContent = 'Cette adresse n’est pas exploitable. Entrez un nom de domaine, par exemple exemple.fr.';
+      blocs.appendChild(err);
+      cible.textContent = 'Aucune analyse en cours';
+      champ.focus();
+      return;
+    }
+
+    cible.textContent = domaine;
+    blocs.innerHTML = '';
+    blocs.setAttribute('aria-busy', 'true');
+
+    EXEMPLES.forEach(function (item) {
+      var attente = document.createElement('div');
+      attente.className = 'bloc';
+      var g = document.createElement('div');
+      var n = document.createElement('p');
+      n.className = 'bloc-nom';
+      n.textContent = item.nom;
+      g.appendChild(n);
+      var etat = document.createElement('span');
+      etat.className = 'note';
+      etat.setAttribute('data-etat', 'attente');
+      etat.textContent = 'en cours';
+      attente.appendChild(g);
+      attente.appendChild(etat);
+      blocs.appendChild(attente);
+
+      var delai = reduit.matches ? 0 : item.delai;
+      minuteurs.push(setTimeout(function () {
+        blocs.replaceChild(ligne(item), attente);
+        if (item === EXEMPLES[EXEMPLES.length - 1]) blocs.setAttribute('aria-busy', 'false');
+      }, delai));
+    });
+  });
+})();
+</script>
